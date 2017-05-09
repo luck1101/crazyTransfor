@@ -56,6 +56,9 @@ public class MainActivity extends AppCompatActivity {
         // TODO Auto-generated method stub
         Intent intent = new Intent(MainActivity.this, RemoteTransforService.class);
         //启动FxService
+        myPhones.add("15280595011");
+        myPhones.add("15280595012");
+        myPhones.add("15280595013");
         intent.putStringArrayListExtra("data", myPhones);
         startService(intent);
     }

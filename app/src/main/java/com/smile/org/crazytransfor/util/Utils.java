@@ -118,58 +118,5 @@ public class Utils {
         return commandResult;
     }
 
-    private static final Map<String, Integer> SOURCES = new HashMap<String, Integer>() {{
-        put("keyboard", InputDevice.SOURCE_KEYBOARD);
-        put("dpad", InputDevice.SOURCE_DPAD);
-        put("gamepad", InputDevice.SOURCE_GAMEPAD);
-        put("touchscreen", InputDevice.SOURCE_TOUCHSCREEN);
-        put("mouse", InputDevice.SOURCE_MOUSE);
-        put("stylus", InputDevice.SOURCE_STYLUS);
-        put("trackball", InputDevice.SOURCE_TRACKBALL);
-        put("touchpad", InputDevice.SOURCE_TOUCHPAD);
-        put("touchnavigation", InputDevice.SOURCE_TOUCH_NAVIGATION);
-        put("joystick", InputDevice.SOURCE_JOYSTICK);
-    }};
-
-    private static final int getSource(int inputSource, int defaultSource) {
-        return inputSource == InputDevice.SOURCE_UNKNOWN ? defaultSource : inputSource;
-    }
-
-    public static void sendTextCmd(String text){
-        int inputSource = getSource(InputDevice.SOURCE_KEYBOARD, InputDevice.SOURCE_KEYBOARD);
-        sendText(inputSource, text);
-    }
-
-    private static void sendText(int source, String text) {
-
-        StringBuffer buff = new StringBuffer(text);
-
-        boolean escapeFlag = false;
-        for (int i=0; i<buff.length(); i++) {
-            if (escapeFlag) {
-                escapeFlag = false;
-                if (buff.charAt(i) == 's') {
-                    buff.setCharAt(i, ' ');
-                    buff.deleteCharAt(--i);
-                }
-            }
-            if (buff.charAt(i) == '%') {
-                escapeFlag = true;
-            }
-        }
-
-        char[] chars = buff.toString().toCharArray();
-
-        KeyCharacterMap kcm = KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD);
-        KeyEvent[] events = kcm.getEvents(chars);
-        for(int i = 0; i < events.length; i++) {
-            KeyEvent e = events[i];
-            if (source != e.getSource()) {
-                e.setSource(source);
-            }
-            //injectKeyEvent(e);
-        }
-    }
-
 
 }

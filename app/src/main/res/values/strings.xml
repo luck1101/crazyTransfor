@@ -7,6 +7,8 @@
     <string name="file_empty">文件内容为空</string>
     <string name="open">打开</string>
     <string name="start_float">启动悬浮框</string>
-    <string name="str_action_start">开始</string>
+    <string name="str_action_record">录制</string>
     <string name="str_action_stop">停止</string>
+    <string name="str_action_start">开始</string>
+    <string name="str_action_pause">暂停</string>
 </resources>
