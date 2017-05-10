@@ -1,9 +1,12 @@
 package com.smile.org.crazytransfor.service;
 
+import android.app.ActivityManager;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -23,6 +26,7 @@ import com.smile.org.crazytransfor.R;
 import com.smile.org.crazytransfor.util.Utils;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Administrator on 2017/5/6 0006.
@@ -43,14 +47,16 @@ public class RemoteTransforService extends Service {
     Button mCursorView;
     private ArrayList<String> peoplePhones = new ArrayList<>();
     private MyHandler myHandler;
+    private Context mContext;
     @Override
     public void onCreate() {
         super.onCreate();
         Log.i(TAG, "onCreate()");
+        mContext = this;
+        myHandler = new MyHandler();
         mWindowManager = (WindowManager)getApplication().getSystemService(getApplication().WINDOW_SERVICE);
         createCursorView();
         createFloatView();
-        myHandler = new MyHandler();
     }
 
     @Override
@@ -102,7 +108,7 @@ public class RemoteTransforService extends Service {
                 //getRawX是触摸位置相对于屏幕的坐标，getX是相对于按钮的坐标
                 wmParams1.x = (int) event.getRawX()- mCursorView.getMeasuredWidth()/2;
                 //减25为状态栏的高度
-                wmParams1.y = (int) event.getRawY() - mCursorView.getMeasuredHeight()/2 -25;
+                wmParams1.y = (int) event.getRawY() - mCursorView.getMeasuredHeight()/2;
                 //刷新
                 mWindowManager.updateViewLayout(mFloatLayout1, wmParams1);
                 return false;  //此处必须返回false，否则OnClickListener获取不到监听
@@ -129,7 +135,7 @@ public class RemoteTransforService extends Service {
         //设置浮动窗口不可聚焦（实现操作除浮动窗口外的其他可见窗口的操作）
         wmParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
         //调整悬浮窗显示的停靠位置为左侧置顶
-        wmParams.gravity = Gravity.LEFT | Gravity.BOTTOM;
+        wmParams.gravity = Gravity.LEFT | Gravity.TOP;
         // 以屏幕左上角为原点，设置x、y初始值，相对于gravity
         wmParams.x = 0;
         wmParams.y = 0;
@@ -157,7 +163,7 @@ public class RemoteTransforService extends Service {
                 //getRawX是触摸位置相对于屏幕的坐标，getX是相对于按钮的坐标
                 wmParams.x = (int) event.getRawX() - mFloatLayout.getMeasuredWidth()/2;
                 //减25为状态栏的高度
-                wmParams.y = (int) event.getRawY() - mFloatLayout.getMeasuredHeight()/2 - 25;
+                wmParams.y = (int) event.getRawY() - mFloatLayout.getMeasuredHeight()/2;
                 //刷新
                 mWindowManager.updateViewLayout(mFloatLayout, wmParams);
                 return false;  //此处必须返回false，否则OnClickListener获取不到监听
@@ -254,19 +260,68 @@ public class RemoteTransforService extends Service {
                 Log.e(TAG, "Exception description = " + e.getMessage() + ",e = " + e);
             }
         }
+        public final String ZFB_MAIN = "AlipayLogin";
+        public final String ZFB_ADD_FRIEND = "AddFriendActivity_";
+        public final String ZFB_FRIEND = "ProfileActivity_";
+        public final String ZFB_TRANSFOR = "TFToAccountConfirmActivity_";
+
+        /**
+         * 淘宝主页：[packageName = com.eg.android.AlipayGphone,topActivityName = com.eg.android.AlipayGphone.AlipayLogin]
+         * 添加朋友：[packageName = com.eg.android.AlipayGphone,topActivityName = com.alipay.mobile.contactsapp.ui.AddFriendActivity_]
+         * 好友界面：[packageName = com.eg.android.AlipayGphone,topActivityName = com.alipay.android.phone.wallet.profileapp.ui.ProfileActivity_]
+         * 转账界面：[packageName = com.eg.android.AlipayGphone,topActivityName = com.alipay.mobile.transferapp.ui.TFToAccountConfirmActivity_]
+         * 输入密码界面：[packageName = com.eg.android.AlipayGphone,topActivityName = com.alipay.android.app.flybird.ui.window.FlyBirdWindowActivity]
+         * 支持成功界面：[packageName = com.eg.android.AlipayGphone,topActivityName = com.alipay.mobile.transferapp.ui.TransferToAccountSuccessActivity_]
+         * 进入个人界面：[packageName = com.eg.android.AlipayGphone,topActivityName = com.alipay.mobile.chatapp.ui.PersonalChatMsgActivity_]按返回又回到主页的朋友选项
+         * 方案：1.进入支付宝主页，先点击首页->点击添加朋友->点击搜索框->输入号码回车
+         *       2.此时判断回车后的当前界面：a.不在ProfileActivity_界面，则输入返回->返回->返回,重新换下一个号码操作；
+         *                                 b.在ProfileActivity_界面->点击转账->->返回->输入金额->点击确认转账
+         *      3.判断当前界面如果在输入密码FlyBirdWindowActivity界面，输入密码->进到TransferToAccountSuccessActivity_点击完成->进到PersonalChatMsgActivity_点击返回
+         * @param phone
+         */
         public void circleTransfor(String phone){
             try {
-                Utils.execCommand("input tap " + myPoint.get(0).x + " " + myPoint.get(0).y,true);
-                Utils.sleep(1);
-                Utils.execCommand("input tap " + myPoint.get(1).x + " " + myPoint.get(1).y,true);
-                Utils.sleep(1);
-                Utils.execCommand("input tap " + myPoint.get(2).x + " " + myPoint.get(2).y,true);
-                Utils.sleep(1);
-                String cmd1 = "input text "+ phone;
-                String cmd2 = "input keyevent 66";
-                String cmds[] = {cmd1,cmd2};
-                Utils.execCommand(cmds,true);
-                Utils.sleep(1);
+                int i = 0;
+                if(Utils.getTopActivityInfo(mContext).topActivityName.contains(ZFB_MAIN)){
+                    Utils.execCommand("input tap " + myPoint.get(i).x + " " + myPoint.get(i).y,true);
+                    i++;
+                    Utils.sleep(500);
+                }
+                if(Utils.getTopActivityInfo(mContext).topActivityName.contains(ZFB_MAIN)){
+                    Utils.execCommand("input tap " + myPoint.get(i).x + " " + myPoint.get(i).y,true);
+                    i++;
+                    Utils.sleep(500);
+                }
+                if(Utils.getTopActivityInfo(mContext).topActivityName.contains(ZFB_ADD_FRIEND)){
+                    Utils.execCommand("input tap " + myPoint.get(i).x + " " + myPoint.get(i).y,true);
+                    i++;
+                    Utils.sleep(500);
+                }
+                if(Utils.getTopActivityInfo(mContext).topActivityName.contains(ZFB_ADD_FRIEND)){
+                    Utils.execCommand("input text " + phone,true);
+                    Utils.sleep(200);
+                    Utils.execCommand("input keyevent 66 ",true);
+                    Utils.sleep(500);
+                }
+
+                if(Utils.getTopActivityInfo(mContext).topActivityName.contains(ZFB_FRIEND)){
+                    Log.d(TAG,"success");
+                    Utils.execCommand("input keyevent 4 ",true);
+                    Utils.sleep(100);
+                    Utils.execCommand("input keyevent 4 ",true);
+                    Utils.sleep(100);
+                    Utils.execCommand("input keyevent 4 ",true);
+                    Utils.sleep(100);
+                }else{
+                    Log.d(TAG,"failed");
+                    Utils.execCommand("input keyevent 4 ",true);
+                    Utils.sleep(100);
+                    Utils.execCommand("input keyevent 4 ",true);
+                    Utils.sleep(100);
+                    Utils.execCommand("input keyevent 4 ",true);
+                    Utils.sleep(100);
+                }
+
             }catch (Exception e){
                 Log.e(TAG,"Exception description = " + e.getMessage() + ",e = " + e);
             }
@@ -274,7 +329,6 @@ public class RemoteTransforService extends Service {
 
         }
     }
-
 
 
 

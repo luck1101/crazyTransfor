@@ -6,11 +6,11 @@
     android:layout_height="wrap_content"
     >
 
-    <TextView
+    <Button
         android:id="@+id/txt_cursor"
         android:layout_width="20dp"
         android:layout_height="20dp"
-        android:background="@color/color_red"
+        android:background="@drawable/home_ohter_tip"
         />
 
 </LinearLayout>
