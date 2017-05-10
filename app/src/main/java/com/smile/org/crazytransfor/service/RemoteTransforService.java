@@ -4,7 +4,9 @@ import android.app.Service;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.Gravity;
@@ -38,17 +40,17 @@ public class RemoteTransforService extends Service {
     WindowManager mWindowManager;
 
     Button mRecordBtn,mStartBtn;
-    TextView mCursorView;
+    Button mCursorView;
     private ArrayList<String> peoplePhones = new ArrayList<>();
-    private TransforMoneyRunnable mTransforMoneyRunnable;
+    private MyHandler myHandler;
     @Override
     public void onCreate() {
         super.onCreate();
         Log.i(TAG, "onCreate()");
         mWindowManager = (WindowManager)getApplication().getSystemService(getApplication().WINDOW_SERVICE);
-        mTransforMoneyRunnable = new TransforMoneyRunnable();
         createCursorView();
         createFloatView();
+        myHandler = new MyHandler();
     }
 
     @Override
@@ -72,7 +74,7 @@ public class RemoteTransforService extends Service {
         //设置浮动窗口不可聚焦（实现操作除浮动窗口外的其他可见窗口的操作）
         wmParams1.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
         //调整悬浮窗显示的停靠位置为左侧置顶
-        wmParams1.gravity = Gravity.RIGHT | Gravity.TOP;
+        wmParams1.gravity = Gravity.LEFT | Gravity.TOP;
         // 以屏幕左上角为原点，设置x、y初始值，相对于gravity
         wmParams1.x = 0;
         wmParams1.y = 0;
@@ -88,7 +90,7 @@ public class RemoteTransforService extends Service {
                 View.MeasureSpec.UNSPECIFIED), View.MeasureSpec
                 .makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
         //浮动窗口按钮
-        mCursorView = (TextView)mFloatLayout1.findViewById(R.id.txt_cursor);
+        mCursorView = (Button)mFloatLayout1.findViewById(R.id.txt_cursor);
         //设置监听浮动窗口的触摸移动
         mCursorView.setOnTouchListener(new View.OnTouchListener()
         {
@@ -98,9 +100,9 @@ public class RemoteTransforService extends Service {
             {
                 // TODO Auto-generated method stub
                 //getRawX是触摸位置相对于屏幕的坐标，getX是相对于按钮的坐标
-                wmParams1.x = (int) event.getRawX() - mCursorView.getMeasuredWidth()/2;
+                wmParams1.x = (int) event.getRawX()- mCursorView.getMeasuredWidth()/2;
                 //减25为状态栏的高度
-                wmParams1.y = (int) event.getRawY() - mCursorView.getMeasuredHeight()/2 - 25;
+                wmParams1.y = (int) event.getRawY() - mCursorView.getMeasuredHeight()/2 -25;
                 //刷新
                 mWindowManager.updateViewLayout(mFloatLayout1, wmParams1);
                 return false;  //此处必须返回false，否则OnClickListener获取不到监听
@@ -111,8 +113,8 @@ public class RemoteTransforService extends Service {
     private Point getCursorViewCoordinate(){
         int[] location = new int[2];
         mCursorView.getLocationOnScreen(location);
-        int x = location[0];
-        int y = location[1];
+        int x = location[0] + mCursorView.getMeasuredWidth()/2;
+        int y = location[1] + mCursorView.getMeasuredHeight()/2;
         Log.d(TAG, "Screen X = "+ x + ",Y = " + y);
         return new Point(x,y);
     }
@@ -182,14 +184,13 @@ public class RemoteTransforService extends Service {
                     isTransforRuning = !isTransforRuning;
                     if(isTransforRuning){
                         Toast.makeText(RemoteTransforService.this, "start", Toast.LENGTH_SHORT).show();
-                        mTransforMoneyRunnable.setPhones(peoplePhones);
-                        mTransforMoneyRunnable.setPoints(coordinatePoints);
-                        mTransforMoneyRunnable.start();
-                        new Thread(mTransforMoneyRunnable).start();
+                        mTransforMeneyThread = new TransforMeneyThread(myHandler,peoplePhones,coordinatePoints);
+                        mTransforMeneyThread.start();
                         mStartBtn.setText(R.string.str_action_stop);
                     }else{
                         Toast.makeText(RemoteTransforService.this, "stop", Toast.LENGTH_SHORT).show();
-                        mTransforMoneyRunnable.stop();
+                        mTransforMeneyThread.stopThread();
+                        mTransforMeneyThread = null;
                         mStartBtn.setText(R.string.str_action_start);
                     }
                 }
@@ -221,52 +222,76 @@ public class RemoteTransforService extends Service {
     private boolean isTransforRuning = false;
     private boolean isRecording = false;
     private ArrayList<Point> coordinatePoints = new ArrayList<>();
+    private TransforMeneyThread mTransforMeneyThread = null;
 
-    class TransforMoneyRunnable implements Runnable{
-        private boolean isStop = false;
+    class TransforMeneyThread extends Thread{
+        public volatile boolean exit = false;
+        private Handler handler;
         private ArrayList<String> myPhones = new ArrayList<>();
         private ArrayList<Point> myPoint = new ArrayList<>();
 
-        public void setPhones(ArrayList<String> list){
-            if(!Utils.isEmpty(list)){
-                myPhones.clear();
-                myPhones.addAll(list);
-            }
+        public TransforMeneyThread(Handler h,ArrayList<String> phones, ArrayList<Point> points){
+            handler = h;
+            myPhones.addAll(phones);
+            myPoint.addAll(points);
         }
-        public void setPoints(ArrayList<Point> points){
-            if(!Utils.isEmpty(points)){
-                myPoint.clear();
-                myPoint.addAll(points);
-            }
-        }
-        public void start(){
-            isStop = false;
-        }
-        public void stop(){
-            isStop = true;
+        public void stopThread(){
+            exit = true;
+            interrupt();
         }
 
         @Override
         public void run() {
             try {
-                for (String phone : myPhones){
-                    if(isStop){
-                        Log.d(TAG,"stop TransforMoneyRunnable");
+                for (String phone : myPhones) {
+                    if(exit){
                         break;
                     }
                     circleTransfor(phone);
-                    Thread.currentThread().sleep(2000);
                 }
+                handler.sendEmptyMessage(MSG_END);
+            } catch (Exception e) {
+                Log.e(TAG, "Exception description = " + e.getMessage() + ",e = " + e);
+            }
+        }
+        public void circleTransfor(String phone){
+            try {
+                Utils.execCommand("input tap " + myPoint.get(0).x + " " + myPoint.get(0).y,true);
+                Utils.sleep(1);
+                Utils.execCommand("input tap " + myPoint.get(1).x + " " + myPoint.get(1).y,true);
+                Utils.sleep(1);
+                Utils.execCommand("input tap " + myPoint.get(2).x + " " + myPoint.get(2).y,true);
+                Utils.sleep(1);
+                String cmd1 = "input text "+ phone;
+                String cmd2 = "input keyevent 66";
+                String cmds[] = {cmd1,cmd2};
+                Utils.execCommand(cmds,true);
+                Utils.sleep(1);
             }catch (Exception e){
                 Log.e(TAG,"Exception description = " + e.getMessage() + ",e = " + e);
             }
 
+
         }
-        public void circleTransfor(String phone){
-            Log.d(TAG,"circleTransfor phone = " +phone);
-            for (Point p : myPoint){{
-                Log.d(TAG,"circleTransfor p = " +p);
-            }}
+    }
+
+
+
+
+    private static final int MSG_END = 1001;
+    class MyHandler extends Handler{
+        @Override
+        public void handleMessage(Message msg) {
+            int what = msg.what;
+            Log.d(TAG,"MyHandler what = " + what);
+            switch (what){
+                case MSG_END:
+                    isTransforRuning = false;
+                    mStartBtn.setText(R.string.str_action_start);
+                    break;
+                default:
+                    break;
+            }
         }
     }
 
@@ -278,6 +303,11 @@ public class RemoteTransforService extends Service {
         {
             //移除悬浮窗口
             mWindowManager.removeView(mFloatLayout);
+        }
+        if(mFloatLayout1 != null)
+        {
+            //移除悬浮窗口
+            mWindowManager.removeView(mFloatLayout1);
         }
     }
 
