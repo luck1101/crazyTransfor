@@ -4,7 +4,8 @@
     android:id="@+id/float_layout"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:paddingTop="60dp"
+    android:paddingTop="50dp"
+    android:background="#66000000"
     >
 
     <Button

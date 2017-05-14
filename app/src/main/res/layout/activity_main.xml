@@ -57,4 +57,26 @@
         android:layout_below="@id/txt_description2"
         />
 
+    <Button
+        android:id="@+id/btn_save"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/str_action_save"
+        android:layout_below="@+id/btn_start_float"
+        android:layout_toRightOf="@+id/txt_file_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        />
+
+    <Button
+        android:id="@+id/btn_clear"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/str_action_clear"
+        android:layout_below="@+id/btn_save"
+        android:layout_toRightOf="@+id/txt_file_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        />
+
 </RelativeLayout>

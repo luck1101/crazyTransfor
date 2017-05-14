@@ -23,6 +23,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.smile.org.crazytransfor.R;
+import com.smile.org.crazytransfor.model.PointData;
+import com.smile.org.crazytransfor.util.DataHelper;
 import com.smile.org.crazytransfor.util.Utils;
 
 import java.util.ArrayList;
@@ -48,6 +50,7 @@ public class RemoteTransforService extends Service {
     private ArrayList<String> peoplePhones = new ArrayList<>();
     private MyHandler myHandler;
     private Context mContext;
+    private DataHelper mDataHelper;
     @Override
     public void onCreate() {
         super.onCreate();
@@ -55,18 +58,33 @@ public class RemoteTransforService extends Service {
         mContext = this;
         myHandler = new MyHandler();
         mWindowManager = (WindowManager)getApplication().getSystemService(getApplication().WINDOW_SERVICE);
-        createCursorView();
+        mDataHelper = new DataHelper(mContext);
         createFloatView();
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        ArrayList<String> phones = intent.getStringArrayListExtra("data");
-        Log.d(TAG,"phones = " + phones);
-        if(phones != null){
-            peoplePhones.clear();
-            peoplePhones.addAll(phones);
+        String action = intent.getStringExtra("action");
+        Log.d(TAG,"action = " + action);
+        if ("start".equals(action)){
+            ArrayList<String> phones = intent.getStringArrayListExtra("data");
+            Log.d(TAG,"phones = " + phones);
+            if (phones != null){
+                peoplePhones.clear();
+                peoplePhones.addAll(phones);
+            }
+        }else if ("save".equals(action)){
+            if (!Utils.isEmpty(coordinatePoints)){
+                Log.d(TAG,"save coordinatePoints");
+                for (PointData pointData : coordinatePoints){
+                    mDataHelper.saveCoodinate(pointData);
+                }
+            }
+        }else if ("clear".equals(action)){
+            Log.d(TAG,"clear coordinatePoints");
+            mDataHelper.delCoodinate();
         }
+
         return super.onStartCommand(intent, flags, startId);
 
     }
@@ -116,13 +134,24 @@ public class RemoteTransforService extends Service {
         });
     }
 
-    private Point getCursorViewCoordinate(){
+    private void removeCursor(){
+        if(mFloatLayout1 != null)
+        {
+            //移除悬浮窗口
+            mWindowManager.removeView(mFloatLayout1);
+        }
+    }
+
+    private PointData getCursorViewCoordinate(){
         int[] location = new int[2];
         mCursorView.getLocationOnScreen(location);
         int x = location[0] + mCursorView.getMeasuredWidth()/2;
         int y = location[1] + mCursorView.getMeasuredHeight()/2;
         Log.d(TAG, "Screen X = "+ x + ",Y = " + y);
-        return new Point(x,y);
+        PointData data = new PointData();
+        data.x = x;
+        data.y = y;
+        return data;
     }
 
     private void createFloatView()
@@ -181,12 +210,21 @@ public class RemoteTransforService extends Service {
             public void onClick(View v)
             {
                 // TODO Auto-generated method stub
+
                 if(isRecording){
-                    Point addPoint = getCursorViewCoordinate();
+                    PointData addPoint = getCursorViewCoordinate();
                     Log.d(TAG,"addPoint = " + addPoint);
                     Toast.makeText(RemoteTransforService.this, "+("+addPoint.x+","+addPoint.y+")", Toast.LENGTH_SHORT).show();
                     coordinatePoints.add(addPoint);
+                    mStartBtn.setText("+"+coordinatePoints.size());
                 }else{
+                    if(Utils.isEmpty(coordinatePoints)){
+                        coordinatePoints = (ArrayList<PointData>) mDataHelper.getCoodinateList();
+                    }
+                    if(Utils.isEmpty(coordinatePoints)){
+                        Toast.makeText(RemoteTransforService.this, "empty,please record!", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
                     isTransforRuning = !isTransforRuning;
                     if(isTransforRuning){
                         Toast.makeText(RemoteTransforService.this, "start", Toast.LENGTH_SHORT).show();
@@ -212,6 +250,7 @@ public class RemoteTransforService extends Service {
                 // TODO Auto-generated method stub
                 isRecording = !isRecording;
                 if(isRecording){
+                    createCursorView();
                     Toast.makeText(RemoteTransforService.this, "record", Toast.LENGTH_SHORT).show();
                     mRecordBtn.setText(R.string.str_action_stop);
                     coordinatePoints.clear();
@@ -220,6 +259,7 @@ public class RemoteTransforService extends Service {
                     Toast.makeText(RemoteTransforService.this, "stop", Toast.LENGTH_SHORT).show();
                     mRecordBtn.setText(R.string.str_action_record);
                     mStartBtn.setText(R.string.str_action_start);
+                    removeCursor();
                 }
             }
         });
@@ -227,16 +267,16 @@ public class RemoteTransforService extends Service {
 
     private boolean isTransforRuning = false;
     private boolean isRecording = false;
-    private ArrayList<Point> coordinatePoints = new ArrayList<>();
+    private ArrayList<PointData> coordinatePoints = new ArrayList<>();
     private TransforMeneyThread mTransforMeneyThread = null;
 
     class TransforMeneyThread extends Thread{
         public volatile boolean exit = false;
         private Handler handler;
         private ArrayList<String> myPhones = new ArrayList<>();
-        private ArrayList<Point> myPoint = new ArrayList<>();
+        private ArrayList<PointData> myPoint = new ArrayList<>();
 
-        public TransforMeneyThread(Handler h,ArrayList<String> phones, ArrayList<Point> points){
+        public TransforMeneyThread(Handler h,ArrayList<String> phones, ArrayList<PointData> points){
             handler = h;
             myPhones.addAll(phones);
             myPoint.addAll(points);
@@ -264,6 +304,10 @@ public class RemoteTransforService extends Service {
         public final String ZFB_ADD_FRIEND = "AddFriendActivity_";
         public final String ZFB_FRIEND = "ProfileActivity_";
         public final String ZFB_TRANSFOR = "TFToAccountConfirmActivity_";
+        public final String ZFB_INPUT_PASSWD = "FlyBirdWindowActivity";
+        public final String ZFB_TRANSFOR_SUCCES = "TransferToAccountSuccessActivity_";
+        public final String ZFB_ENTER_PERSON = "PersonalChatMsgActivity_";
+
 
         /**
          * 淘宝主页：[packageName = com.eg.android.AlipayGphone,topActivityName = com.eg.android.AlipayGphone.AlipayLogin]
@@ -271,9 +315,9 @@ public class RemoteTransforService extends Service {
          * 好友界面：[packageName = com.eg.android.AlipayGphone,topActivityName = com.alipay.android.phone.wallet.profileapp.ui.ProfileActivity_]
          * 转账界面：[packageName = com.eg.android.AlipayGphone,topActivityName = com.alipay.mobile.transferapp.ui.TFToAccountConfirmActivity_]
          * 输入密码界面：[packageName = com.eg.android.AlipayGphone,topActivityName = com.alipay.android.app.flybird.ui.window.FlyBirdWindowActivity]
-         * 支持成功界面：[packageName = com.eg.android.AlipayGphone,topActivityName = com.alipay.mobile.transferapp.ui.TransferToAccountSuccessActivity_]
+         * 转账成功界面：[packageName = com.eg.android.AlipayGphone,topActivityName = com.alipay.mobile.transferapp.ui.TransferToAccountSuccessActivity_]
          * 进入个人界面：[packageName = com.eg.android.AlipayGphone,topActivityName = com.alipay.mobile.chatapp.ui.PersonalChatMsgActivity_]按返回又回到主页的朋友选项
-         * 方案：1.进入支付宝主页，先点击首页->点击添加朋友->点击搜索框->输入号码回车
+         * 方案：1.进入支付宝主页，先点击首页->点击+->点击添加朋友->到添加好友界面点击搜索框->输入号码回车
          *       2.此时判断回车后的当前界面：a.不在ProfileActivity_界面，则输入返回->返回->返回,重新换下一个号码操作；
          *                                 b.在ProfileActivity_界面->点击转账->->返回->输入金额->点击确认转账
          *      3.判断当前界面如果在输入密码FlyBirdWindowActivity界面，输入密码->进到TransferToAccountSuccessActivity_点击完成->进到PersonalChatMsgActivity_点击返回
@@ -282,44 +326,92 @@ public class RemoteTransforService extends Service {
         public void circleTransfor(String phone){
             try {
                 int i = 0;
+                Utils.sleep(1000);
+                Log.d(TAG,"start");
                 if(Utils.getTopActivityInfo(mContext).topActivityName.contains(ZFB_MAIN)){
+                    Log.d(TAG,"tap main");
+                    //点击1：首页
                     Utils.execCommand("input tap " + myPoint.get(i).x + " " + myPoint.get(i).y,true);
                     i++;
-                    Utils.sleep(500);
+                    Utils.sleep(1500);
                 }
                 if(Utils.getTopActivityInfo(mContext).topActivityName.contains(ZFB_MAIN)){
+                    Log.d(TAG,"tap +");
+                    //点击2：+号
                     Utils.execCommand("input tap " + myPoint.get(i).x + " " + myPoint.get(i).y,true);
                     i++;
-                    Utils.sleep(500);
+                    Utils.sleep(1500);
+                }
+                if(Utils.getTopActivityInfo(mContext).topActivityName.contains(ZFB_MAIN)){
+                    Log.d(TAG,"tap add friend");
+                    ////点击3：添加好友
+                    Utils.execCommand("input tap " + myPoint.get(i).x + " " + myPoint.get(i).y,true);
+                    i++;
+                    Utils.sleep(1500);
                 }
                 if(Utils.getTopActivityInfo(mContext).topActivityName.contains(ZFB_ADD_FRIEND)){
+                    //点击4：输入框
+                    Log.d(TAG,"tap input phone");
                     Utils.execCommand("input tap " + myPoint.get(i).x + " " + myPoint.get(i).y,true);
                     i++;
-                    Utils.sleep(500);
+                    Utils.sleep(1500);
                 }
                 if(Utils.getTopActivityInfo(mContext).topActivityName.contains(ZFB_ADD_FRIEND)){
+                    //输入号码
+                    Log.d(TAG,"input text " + phone);
                     Utils.execCommand("input text " + phone,true);
-                    Utils.sleep(200);
+                    Utils.sleep(1000);
                     Utils.execCommand("input keyevent 66 ",true);
-                    Utils.sleep(500);
+                    Utils.sleep(1000);
                 }
 
+                //
                 if(Utils.getTopActivityInfo(mContext).topActivityName.contains(ZFB_FRIEND)){
-                    Log.d(TAG,"success");
-                    Utils.execCommand("input keyevent 4 ",true);
-                    Utils.sleep(100);
-                    Utils.execCommand("input keyevent 4 ",true);
-                    Utils.sleep(100);
-                    Utils.execCommand("input keyevent 4 ",true);
-                    Utils.sleep(100);
+                    //点击5：转账
+                    Log.d(TAG,"tap transfor");
+                    Utils.execCommand("input tap " + myPoint.get(i).x + " " + myPoint.get(i).y,true);
+                    i++;
+                    Utils.sleep(2000);
+                    //判断是否在转账界面
+                    if(Utils.getTopActivityInfo(mContext).topActivityName.contains(ZFB_TRANSFOR)){
+                        //输入转账金额
+                        Log.d(TAG,"input text 0.01");
+                        Utils.execCommand("input text " + 0.01,true);
+                        Utils.sleep(500);
+                        Utils.execCommand("input keyevent 66 ",true);
+                        Utils.sleep(500);
+                        //输入备注
+                        Log.d(TAG,"input text hello");
+                        Utils.execCommand("input text " + "hello",true);
+                        Utils.sleep(100);
+                        Utils.execCommand("input keyevent 4 ",true);
+                        Utils.sleep(100);
+                        Log.d(TAG,"tap sure transfor");
+                        //点击6:确认转账
+                        Utils.execCommand("input tap " + myPoint.get(i).x + " " + myPoint.get(i).y,true);
+                        i++;
+                        Utils.sleep(2000);
+                        Log.d(TAG,"tap complement");
+                        //点击7:完成
+                        Utils.execCommand("input tap " + myPoint.get(i).x + " " + myPoint.get(i).y,true);
+                        i++;
+                        Utils.sleep(2000);
+                        Utils.execCommand("input keyevent 4 ",true);
+                        Utils.sleep(1000);
+                        Log.d(TAG,"end");
+                        return;
+                    }
+
                 }else{
-                    Log.d(TAG,"failed");
+                    Log.d(TAG,"找不到好友，回到主页");
                     Utils.execCommand("input keyevent 4 ",true);
-                    Utils.sleep(100);
+                    Utils.sleep(1000);
                     Utils.execCommand("input keyevent 4 ",true);
-                    Utils.sleep(100);
+                    Utils.sleep(1000);
                     Utils.execCommand("input keyevent 4 ",true);
-                    Utils.sleep(100);
+                    Utils.sleep(1000);
+                    Log.d(TAG,"end");
+                    return ;
                 }
 
             }catch (Exception e){
@@ -363,6 +455,7 @@ public class RemoteTransforService extends Service {
             //移除悬浮窗口
             mWindowManager.removeView(mFloatLayout1);
         }
+        mDataHelper.close();
     }
 
     @Override

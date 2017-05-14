@@ -36,12 +36,32 @@ public class MainActivity extends AppCompatActivity {
     Button btn_open;
     @BindView(R.id.btn_start_float)
     Button btn_start_float;
+    @BindView(R.id.btn_save)
+    Button btn_save;
+    @BindView(R.id.btn_clear)
+    Button btn_clear;
     @BindView(R.id.txt_file_content)
     TextView txt_file_content;
 
     private String TAG = MainActivity.class.getSimpleName();
     private final int REC_REQUESTCODE = 1101;
     private MyHandler myHandler;
+
+    @OnClick(R.id.btn_save)
+    void save(){
+        // TODO Auto-generated method stub
+        Intent intent = new Intent(MainActivity.this, RemoteTransforService.class);
+        intent.putExtra("action","save");
+        startService(intent);
+    }
+
+    @OnClick(R.id.btn_clear)
+    void clear(){
+        // TODO Auto-generated method stub
+        Intent intent = new Intent(MainActivity.this, RemoteTransforService.class);
+        intent.putExtra("action","clear");
+        startService(intent);
+    }
 
     @OnClick(R.id.btn_open)
     void selectFile() {
@@ -56,9 +76,12 @@ public class MainActivity extends AppCompatActivity {
         // TODO Auto-generated method stub
         Intent intent = new Intent(MainActivity.this, RemoteTransforService.class);
         //启动FxService
-        myPhones.add("15280595011");
-        myPhones.add("15280595012");
-        myPhones.add("15280595013");
+        myPhones.add("15280595020");
+        myPhones.add("15280595021");
+        myPhones.add("15280595022");
+        myPhones.add("15280595023");
+        myPhones.add("15280595024");
+        intent.putExtra("action","start");
         intent.putStringArrayListExtra("data", myPhones);
         startService(intent);
     }
