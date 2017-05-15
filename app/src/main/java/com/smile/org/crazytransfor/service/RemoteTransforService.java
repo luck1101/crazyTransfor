@@ -221,13 +221,17 @@ public class RemoteTransforService extends Service {
                     if(Utils.isEmpty(coordinatePoints)){
                         coordinatePoints = (ArrayList<PointData>) mDataHelper.getCoodinateList();
                     }
-                    if(Utils.isEmpty(coordinatePoints)){
-                        Toast.makeText(RemoteTransforService.this, "empty,please record!", Toast.LENGTH_SHORT).show();
+                    if(Utils.isEmpty(coordinatePoints)||coordinatePoints.size() < 8){
+                        Toast.makeText(RemoteTransforService.this, getString(R.string.str_action_point_invalid), Toast.LENGTH_SHORT).show();
                         return;
                     }
                     isTransforRuning = !isTransforRuning;
                     if(isTransforRuning){
                         Toast.makeText(RemoteTransforService.this, "start", Toast.LENGTH_SHORT).show();
+                        if(mTransforMeneyThread != null){
+                            mTransforMeneyThread.stopThread();
+                            mTransforMeneyThread = null;
+                        }
                         mTransforMeneyThread = new TransforMeneyThread(myHandler,peoplePhones,coordinatePoints);
                         mTransforMeneyThread.start();
                         mStartBtn.setText(R.string.str_action_stop);
@@ -310,10 +314,11 @@ public class RemoteTransforService extends Service {
 
 
         /**
-         * 淘宝主页：[packageName = com.eg.android.AlipayGphone,topActivityName = com.eg.android.AlipayGphone.AlipayLogin]
+         * 淘宝主页：[packageName = com.eg.android.AlipayGphone/.AlipayLogin,topActivityName = com.eg.android.AlipayGphone.AlipayLogin]
          * 添加朋友：[packageName = com.eg.android.AlipayGphone,topActivityName = com.alipay.mobile.contactsapp.ui.AddFriendActivity_]
          * 好友界面：[packageName = com.eg.android.AlipayGphone,topActivityName = com.alipay.android.phone.wallet.profileapp.ui.ProfileActivity_]
          * 转账界面：[packageName = com.eg.android.AlipayGphone,topActivityName = com.alipay.mobile.transferapp.ui.TFToAccountConfirmActivity_]
+         * 转账确认界面：lipay.mobile.transferapp.ui.TFToAccountConfirmActivity_
          * 输入密码界面：[packageName = com.eg.android.AlipayGphone,topActivityName = com.alipay.android.app.flybird.ui.window.FlyBirdWindowActivity]
          * 转账成功界面：[packageName = com.eg.android.AlipayGphone,topActivityName = com.alipay.mobile.transferapp.ui.TransferToAccountSuccessActivity_]
          * 进入个人界面：[packageName = com.eg.android.AlipayGphone,topActivityName = com.alipay.mobile.chatapp.ui.PersonalChatMsgActivity_]按返回又回到主页的朋友选项
@@ -325,84 +330,146 @@ public class RemoteTransforService extends Service {
          */
         public void circleTransfor(String phone){
             try {
-                int i = 0;
-                Utils.sleep(1000);
                 Log.d(TAG,"start");
-                if(Utils.getTopActivityInfo(mContext).topActivityName.contains(ZFB_MAIN)){
-                    Log.d(TAG,"tap main");
+                int x = 0,y = 0;
+                if(waitForActivity(ZFB_MAIN,6)){
                     //点击1：首页
-                    Utils.execCommand("input tap " + myPoint.get(i).x + " " + myPoint.get(i).y,true);
-                    i++;
-                    Utils.sleep(1500);
+                    Utils.sleep(800);
+                    x = myPoint.get(0).x;
+                    y = myPoint.get(0).y;
+                    Log.d(TAG,"tap1 main x = " + x + ",y = " + y);
+                    Utils.execCommand("input tap " + x + " " + y,true);
+                }else{
+                    Log.e(TAG,"1 not ZFB_MAIN");
                 }
-                if(Utils.getTopActivityInfo(mContext).topActivityName.contains(ZFB_MAIN)){
-                    Log.d(TAG,"tap +");
+
+                if(waitForActivity(ZFB_MAIN,6)){
                     //点击2：+号
-                    Utils.execCommand("input tap " + myPoint.get(i).x + " " + myPoint.get(i).y,true);
-                    i++;
-                    Utils.sleep(1500);
+                    Utils.sleep(800);
+                    x = myPoint.get(1).x;
+                    y = myPoint.get(1).y;
+                    Log.d(TAG,"tap2 + x = " + x + ",y = " + y);
+                    Utils.execCommand("input tap " + x + " " + y,true);
+                }else{
+                    Log.e(TAG,"2 not ZFB_MAIN");
                 }
-                if(Utils.getTopActivityInfo(mContext).topActivityName.contains(ZFB_MAIN)){
-                    Log.d(TAG,"tap add friend");
+
+                if(waitForActivity(ZFB_MAIN,6)){
                     ////点击3：添加好友
-                    Utils.execCommand("input tap " + myPoint.get(i).x + " " + myPoint.get(i).y,true);
-                    i++;
-                    Utils.sleep(1500);
+                    Utils.sleep(800);
+                    x = myPoint.get(2).x;
+                    y = myPoint.get(2).y;
+                    Log.d(TAG,"tap3 add friend x = " + x + ",y = " + y);
+                    Utils.execCommand("input tap " + x + " " + y,true);
+                }else{
+                    Log.e(TAG,"3 not ZFB_MAIN");
                 }
-                if(Utils.getTopActivityInfo(mContext).topActivityName.contains(ZFB_ADD_FRIEND)){
+
+                if(waitForActivity(ZFB_ADD_FRIEND,6)){
                     //点击4：输入框
-                    Log.d(TAG,"tap input phone");
-                    Utils.execCommand("input tap " + myPoint.get(i).x + " " + myPoint.get(i).y,true);
-                    i++;
-                    Utils.sleep(1500);
-                }
-                if(Utils.getTopActivityInfo(mContext).topActivityName.contains(ZFB_ADD_FRIEND)){
+                    Utils.sleep(800);
+                    x = myPoint.get(3).x;
+                    y = myPoint.get(3).y;
+                    Log.d(TAG,"tap4 input phone x = " + x + ",y = " + y);
+                    Utils.execCommand("input tap " + x + " " + y,true);
+                    Utils.sleep(1000);
                     //输入号码
                     Log.d(TAG,"input text " + phone);
                     Utils.execCommand("input text " + phone,true);
+                    Utils.sleep(800);
+                    Utils.execCommand("input keyevent 66 ",true);
+                }else{
+                    Log.e(TAG,"4 not ZFB_ADD_FRIEND");
+                }
+
+                if(waitForActivity(ZFB_FRIEND,10)) {
+                    //点击5：转账
+                    Utils.sleep(2000);
+                    x = myPoint.get(4).x;
+                    y = myPoint.get(4).y;
+                    Log.d(TAG,"tap5 transfor x = " + x + ",y = " + y);
+                    Utils.execCommand("input tap " + x + " " + y,true);
+                }else{
+                    Log.e(TAG,"5 not ZFB_FRIEND,return to ZFB_MAIN");
+                    Utils.sleep(1500);
+                    Utils.execCommand("input keyevent 4 ",true);
+                    Utils.sleep(1500);
+                    Utils.execCommand("input keyevent 4 ",true);
+                    Utils.sleep(1500);
+                    Utils.execCommand("input keyevent 4 ",true);
+                    Utils.sleep(1500);
+                    return;
+                }
+
+                //判断是否在转账界面
+                if(waitForActivity(ZFB_TRANSFOR,6)) {
+                    //输入转账金额
+                    Log.d(TAG,"input text 0.01");
+                    Utils.sleep(800);
+                    Utils.execCommand("input text " + 0.01,true);
                     Utils.sleep(1000);
                     Utils.execCommand("input keyevent 66 ",true);
                     Utils.sleep(1000);
+                    //输入备注
+                    Log.d(TAG,"input text hello");
+                    Utils.execCommand("input text " + "hello",true);
+                    Utils.sleep(1000);
+                    Utils.execCommand("input keyevent 4 ",true);
+                    Utils.sleep(1000);
+                    //点击6:确认转账
+                    x = myPoint.get(5).x;
+                    y = myPoint.get(5).y;
+                    Log.d(TAG,"tap6 sure transfor x = " + x + ",y = " + y);
+                    Utils.execCommand("input tap " + x + " " + y,true);
+                    Utils.sleep(3000);
+                }else{
+                    Log.e(TAG,"6 not ZFB_TRANSFOR");
                 }
 
-                //
-                if(Utils.getTopActivityInfo(mContext).topActivityName.contains(ZFB_FRIEND)){
-                    //点击5：转账
-                    Log.d(TAG,"tap transfor");
-                    Utils.execCommand("input tap " + myPoint.get(i).x + " " + myPoint.get(i).y,true);
-                    i++;
-                    Utils.sleep(2000);
-                    //判断是否在转账界面
-                    if(Utils.getTopActivityInfo(mContext).topActivityName.contains(ZFB_TRANSFOR)){
-                        //输入转账金额
-                        Log.d(TAG,"input text 0.01");
-                        Utils.execCommand("input text " + 0.01,true);
-                        Utils.sleep(500);
-                        Utils.execCommand("input keyevent 66 ",true);
-                        Utils.sleep(500);
-                        //输入备注
-                        Log.d(TAG,"input text hello");
-                        Utils.execCommand("input text " + "hello",true);
-                        Utils.sleep(100);
-                        Utils.execCommand("input keyevent 4 ",true);
-                        Utils.sleep(100);
-                        Log.d(TAG,"tap sure transfor");
-                        //点击6:确认转账
-                        Utils.execCommand("input tap " + myPoint.get(i).x + " " + myPoint.get(i).y,true);
-                        i++;
-                        Utils.sleep(2000);
-                        Log.d(TAG,"tap complement");
-                        //点击7:完成
-                        Utils.execCommand("input tap " + myPoint.get(i).x + " " + myPoint.get(i).y,true);
-                        i++;
-                        Utils.sleep(2000);
-                        Utils.execCommand("input keyevent 4 ",true);
-                        Utils.sleep(1000);
-                        Log.d(TAG,"end");
-                        return;
-                    }
+                //确认转账后，弹出输入用户名时，返回到之前的操作
+                if(waitForActivity(ZFB_TRANSFOR,6)) {
+                    Log.d(TAG,"please input user name");
+                    Utils.execCommand("input keyevent 4 ",true);
+                    Utils.sleep(1000);
+                    x = myPoint.get(6).x;
+                    y = myPoint.get(6).y;
+                    Log.d(TAG,"tap6 sure transfor x = " + x + ",y = " + y);
+                    Utils.execCommand("input tap " + x + " " + y,true);
 
+                    Utils.sleep(1000);
+                    Utils.execCommand("input keyevent 4 ",true);
+                    Utils.sleep(1000);
+                    Utils.execCommand("input keyevent 4 ",true);
+                    Utils.sleep(1000);
+                    Utils.execCommand("input keyevent 4 ",true);
+                    Utils.sleep(1000);
+                    Utils.execCommand("input keyevent 4 ",true);
+                    return;
                 }else{
+                    Log.e(TAG,"6 not ZFB_TRANSFOR");
+                }
+
+
+                if(waitForActivity(ZFB_TRANSFOR_SUCCES,6)){
+                    //点击7:完成
+                    Utils.sleep(800);
+                    x = myPoint.get(7).x;
+                    y = myPoint.get(7).y;
+                    Log.d(TAG,"tap7 complement x = " + x + ",y = " + y);
+                    Utils.execCommand("input tap " + x + " " + y,true);
+                }else{
+                    Log.e(TAG,"7 not ZFB_TRANSFOR_SUCCES");
+                }
+
+                if(waitForActivity(ZFB_ENTER_PERSON,6)){
+                    Utils.sleep(1500);
+                    Utils.execCommand("input keyevent 4 ",true);
+                    Log.d(TAG,"end");
+                }else{
+                    Log.e(TAG,"8 not ZFB_ENTER_PERSON");
+                }
+
+                /*if(true){
                     Log.d(TAG,"找不到好友，回到主页");
                     Utils.execCommand("input keyevent 4 ",true);
                     Utils.sleep(1000);
@@ -412,7 +479,7 @@ public class RemoteTransforService extends Service {
                     Utils.sleep(1000);
                     Log.d(TAG,"end");
                     return ;
-                }
+                }*/
 
             }catch (Exception e){
                 Log.e(TAG,"Exception description = " + e.getMessage() + ",e = " + e);
@@ -420,6 +487,19 @@ public class RemoteTransforService extends Service {
 
 
         }
+    }
+
+    public boolean waitForActivity(String activity,int count){
+        boolean result = false;
+        while(count > 0){
+            Utils.sleep(500);
+            if(Utils.getTopActivityInfo(mContext).topActivityName.contains(activity)){
+                result = true;
+                break;
+            }
+            count--;
+        }
+        return result;
     }
 
 
