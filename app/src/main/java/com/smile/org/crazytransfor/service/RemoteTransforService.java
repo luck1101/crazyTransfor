@@ -19,6 +19,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -28,6 +29,7 @@ import com.smile.org.crazytransfor.util.DataHelper;
 import com.smile.org.crazytransfor.util.Utils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -45,7 +47,7 @@ public class RemoteTransforService extends Service {
     //创建浮动窗口设置布局参数的对象
     WindowManager mWindowManager;
 
-    Button mRecordBtn,mStartBtn;
+    Button mRecordBtn,mStartBtn,mLaheiBtn,mUserErrBtn;
     Button mCursorView;
     private ArrayList<String> peoplePhones = new ArrayList<>();
     private MyHandler myHandler;
@@ -74,10 +76,10 @@ public class RemoteTransforService extends Service {
                 peoplePhones.addAll(phones);
             }
         }else if ("save".equals(action)){
-            if (!Utils.isEmpty(coordinatePoints)){
+            if (coordinatePoints != null && coordinatePoints.size() != 0){
                 Log.d(TAG,"save coordinatePoints");
-                for (PointData pointData : coordinatePoints){
-                    mDataHelper.saveCoodinate(pointData);
+                for (String key : coordinatePoints.keySet()){
+                    mDataHelper.saveCoodinate(coordinatePoints.get(key));
                 }
             }
         }else if ("clear".equals(action)){
@@ -202,6 +204,9 @@ public class RemoteTransforService extends Service {
         //浮动窗口按钮
         mRecordBtn = (Button)mFloatLayout.findViewById(R.id.btn_record);
         mStartBtn = (Button)mFloatLayout.findViewById(R.id.btn_start);
+        mLaheiBtn = (Button)mFloatLayout.findViewById(R.id.btn_lahei);
+        mUserErrBtn = (Button)mFloatLayout.findViewById(R.id.btn_user_name);
+
 
         mStartBtn.setOnClickListener(new View.OnClickListener()
         {
@@ -212,16 +217,22 @@ public class RemoteTransforService extends Service {
                 // TODO Auto-generated method stub
 
                 if(isRecording){
+                    if(currentIndex >= KEYS.length){
+                        Toast.makeText(RemoteTransforService.this, "不需要再录制了,点数够了", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
                     PointData addPoint = getCursorViewCoordinate();
+                    addPoint.key = KEYS[currentIndex];
+                    currentIndex++;
                     Log.d(TAG,"addPoint = " + addPoint);
-                    Toast.makeText(RemoteTransforService.this, "+("+addPoint.x+","+addPoint.y+")", Toast.LENGTH_SHORT).show();
-                    coordinatePoints.add(addPoint);
+                    Toast.makeText(RemoteTransforService.this, addPoint.key+"("+addPoint.x+","+addPoint.y+")", Toast.LENGTH_SHORT).show();
+                    coordinatePoints.put(addPoint.key,addPoint);
                     mStartBtn.setText("+"+coordinatePoints.size());
                 }else{
-                    if(Utils.isEmpty(coordinatePoints)){
-                        coordinatePoints = (ArrayList<PointData>) mDataHelper.getCoodinateList();
+                    if(coordinatePoints == null || coordinatePoints.size() == 0){
+                        coordinatePoints = mDataHelper.getCoodinateList();
                     }
-                    if(Utils.isEmpty(coordinatePoints)||coordinatePoints.size() < 8){
+                    if(coordinatePoints == null||coordinatePoints.size() < 8){
                         Toast.makeText(RemoteTransforService.this, getString(R.string.str_action_point_invalid), Toast.LENGTH_SHORT).show();
                         return;
                     }
@@ -252,6 +263,7 @@ public class RemoteTransforService extends Service {
             public void onClick(View v)
             {
                 // TODO Auto-generated method stub
+                currentIndex = 0;
                 isRecording = !isRecording;
                 if(isRecording){
                     createCursorView();
@@ -267,23 +279,59 @@ public class RemoteTransforService extends Service {
                 }
             }
         });
+
+        mLaheiBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                PointData addPoint = getCursorViewCoordinate();
+                addPoint.key = KEY_LAHEI;
+                Log.d(TAG,"addPoint = " + addPoint);
+                Toast.makeText(RemoteTransforService.this, "+("+addPoint.x+","+addPoint.y+")", Toast.LENGTH_SHORT).show();
+                coordinatePoints.put(addPoint.key,addPoint);
+            }
+        });
+
+        mUserErrBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                PointData addPoint = getCursorViewCoordinate();
+                addPoint.key = KEY_USER_NAME;
+                Log.d(TAG,"addPoint = " + addPoint);
+                Toast.makeText(RemoteTransforService.this, "+("+addPoint.x+","+addPoint.y+")", Toast.LENGTH_SHORT).show();
+                coordinatePoints.put(addPoint.key,addPoint);
+            }
+        });
     }
+    public static final String KEY_LAHEI = "key_lahei";
+    public static final String KEY_USER_NAME = "key_user";
+    public static final String KEY_0 = "key_0";
+    public static final String KEY_1 = "key_1";
+    public static final String KEY_2 = "key_2";
+    public static final String KEY_3 = "key_3";
+    public static final String KEY_4 = "key_4";
+    public static final String KEY_5 = "key_5";
+    public static final String KEY_6 = "key_6";
+    public static final String KEY_7 = "key_7";
+    public static final String KEY_8 = "key_8";
+    public String[] KEYS= {KEY_0,KEY_1,KEY_2,KEY_3,KEY_4,KEY_5,KEY_6,KEY_7,KEY_8};
+    public int currentIndex = 0;
+
 
     private boolean isTransforRuning = false;
     private boolean isRecording = false;
-    private ArrayList<PointData> coordinatePoints = new ArrayList<>();
+    private HashMap<String,PointData> coordinatePoints = new HashMap<>();
     private TransforMeneyThread mTransforMeneyThread = null;
 
     class TransforMeneyThread extends Thread{
         public volatile boolean exit = false;
         private Handler handler;
         private ArrayList<String> myPhones = new ArrayList<>();
-        private ArrayList<PointData> myPoint = new ArrayList<>();
+        private HashMap<String,PointData> myPoint = new HashMap<>();
 
-        public TransforMeneyThread(Handler h,ArrayList<String> phones, ArrayList<PointData> points){
+        public TransforMeneyThread(Handler h,ArrayList<String> phones, HashMap<String,PointData> points){
             handler = h;
             myPhones.addAll(phones);
-            myPoint.addAll(points);
+            myPoint = points;
         }
         public void stopThread(){
             exit = true;
@@ -327,6 +375,9 @@ public class RemoteTransforService extends Service {
          *                                 b.在ProfileActivity_界面->点击转账->->返回->输入金额->点击确认转账
          *      3.判断当前界面如果在输入密码FlyBirdWindowActivity界面，输入密码->进到TransferToAccountSuccessActivity_点击完成->进到PersonalChatMsgActivity_点击返回
          * @param phone
+         * 15280595020正常
+         * 15280595021被拉黑
+         * 15280595030需要输入名字
          */
         public void circleTransfor(String phone){
             try {
@@ -335,8 +386,8 @@ public class RemoteTransforService extends Service {
                 if(waitForActivity(ZFB_MAIN,6)){
                     //点击1：首页
                     Utils.sleep(800);
-                    x = myPoint.get(0).x;
-                    y = myPoint.get(0).y;
+                    x = myPoint.get(KEY_0).x;
+                    y = myPoint.get(KEY_0).y;
                     Log.d(TAG,"tap1 main x = " + x + ",y = " + y);
                     Utils.execCommand("input tap " + x + " " + y,true);
                 }else{
@@ -346,8 +397,8 @@ public class RemoteTransforService extends Service {
                 if(waitForActivity(ZFB_MAIN,6)){
                     //点击2：+号
                     Utils.sleep(800);
-                    x = myPoint.get(1).x;
-                    y = myPoint.get(1).y;
+                    x = myPoint.get(KEY_1).x;
+                    y = myPoint.get(KEY_1).y;
                     Log.d(TAG,"tap2 + x = " + x + ",y = " + y);
                     Utils.execCommand("input tap " + x + " " + y,true);
                 }else{
@@ -357,8 +408,8 @@ public class RemoteTransforService extends Service {
                 if(waitForActivity(ZFB_MAIN,6)){
                     ////点击3：添加好友
                     Utils.sleep(800);
-                    x = myPoint.get(2).x;
-                    y = myPoint.get(2).y;
+                    x = myPoint.get(KEY_2).x;
+                    y = myPoint.get(KEY_2).y;
                     Log.d(TAG,"tap3 add friend x = " + x + ",y = " + y);
                     Utils.execCommand("input tap " + x + " " + y,true);
                 }else{
@@ -368,8 +419,8 @@ public class RemoteTransforService extends Service {
                 if(waitForActivity(ZFB_ADD_FRIEND,6)){
                     //点击4：输入框
                     Utils.sleep(800);
-                    x = myPoint.get(3).x;
-                    y = myPoint.get(3).y;
+                    x = myPoint.get(KEY_3).x;
+                    y = myPoint.get(KEY_3).y;
                     Log.d(TAG,"tap4 input phone x = " + x + ",y = " + y);
                     Utils.execCommand("input tap " + x + " " + y,true);
                     Utils.sleep(1000);
@@ -385,8 +436,8 @@ public class RemoteTransforService extends Service {
                 if(waitForActivity(ZFB_FRIEND,6)) {
                     //点击5：转账
                     Utils.sleep(2000);
-                    x = myPoint.get(4).x;
-                    y = myPoint.get(4).y;
+                    x = myPoint.get(KEY_4).x;
+                    y = myPoint.get(KEY_4).y;
                     Log.d(TAG,"tap5 transfor x = " + x + ",y = " + y);
                     Utils.execCommand("input tap " + x + " " + y,true);
                 }else{
@@ -403,16 +454,16 @@ public class RemoteTransforService extends Service {
                 if(waitForActivity(ZFB_FRIEND,2)) {
                     //点击5：转账
                     Utils.sleep(2000);
-                    x = myPoint.get(4).x;
-                    y = myPoint.get(4).y + 68;
+                    x = myPoint.get(KEY_4).x;
+                    y = myPoint.get(KEY_4).y + 68;
                     Log.d(TAG,"tap5 transfor x = " + x + ",y = " + y);
                     Utils.execCommand("input tap " + x + " " + y,true);
                 }
                 if(waitForActivity(ZFB_FRIEND,2)) {
                     //点击5：转账
                     Utils.sleep(2000);
-                    x = myPoint.get(4).x;
-                    y = myPoint.get(4).y - 68;
+                    x = myPoint.get(KEY_4).x;
+                    y = myPoint.get(KEY_4).y - 68;
                     Log.d(TAG,"tap5 transfor x = " + x + ",y = " + y);
                     Utils.execCommand("input tap " + x + " " + y,true);
                 }
@@ -433,8 +484,8 @@ public class RemoteTransforService extends Service {
                     Utils.execCommand("input keyevent 4 ",true);
                     Utils.sleep(1000);
                     //点击6:确认转账
-                    x = myPoint.get(5).x;
-                    y = myPoint.get(5).y;
+                    x = myPoint.get(KEY_5).x;
+                    y = myPoint.get(KEY_5).y;
                     Log.d(TAG,"tap6 sure transfor x = " + x + ",y = " + y);
                     Utils.execCommand("input tap " + x + " " + y,true);
                     Utils.sleep(3000);
@@ -447,8 +498,8 @@ public class RemoteTransforService extends Service {
                     Log.d(TAG,"需要输入用户名，点击取消，返回主页");
                     Utils.execCommand("input keyevent 4 ",true);
                     Utils.sleep(1000);
-                    x = myPoint.get(6).x;
-                    y = myPoint.get(6).y;
+                    x = myPoint.get(KEY_USER_NAME).x;
+                    y = myPoint.get(KEY_USER_NAME).y;
                     Log.d(TAG,"tap6 sure transfor x = " + x + ",y = " + y);
                     Utils.execCommand("input tap " + x + " " + y,true);
 
@@ -465,8 +516,8 @@ public class RemoteTransforService extends Service {
                 //确认转账后，弹出你已经被拉黑
                 if(waitForActivity(ZFB_TRANSFOR,6)) {
                     Log.d(TAG,"被拉黑，点击确定，返回主页");
-                    x = 553;
-                    y = 726;
+                    x = myPoint.get(KEY_LAHEI).x;
+                    y = myPoint.get(KEY_LAHEI).y;
                     Log.d(TAG,"tap6 sure transfor x = " + x + ",y = " + y);
                     Utils.execCommand("input tap " + x + " " + y,true);
 
@@ -485,8 +536,8 @@ public class RemoteTransforService extends Service {
                 if(waitForActivity(ZFB_TRANSFOR_SUCCES,6)){
                     //点击7:完成
                     Utils.sleep(800);
-                    x = myPoint.get(7).x;
-                    y = myPoint.get(7).y;
+                    x = myPoint.get(KEY_6).x;
+                    y = myPoint.get(KEY_6).y;
                     Log.d(TAG,"tap7 complement x = " + x + ",y = " + y);
                     Utils.execCommand("input tap " + x + " " + y,true);
                 }else{
@@ -500,18 +551,6 @@ public class RemoteTransforService extends Service {
                 }else{
                     Log.e(TAG,"8 not ZFB_ENTER_PERSON");
                 }
-
-                /*if(true){
-                    Log.d(TAG,"找不到好友，回到主页");
-                    Utils.execCommand("input keyevent 4 ",true);
-                    Utils.sleep(1000);
-                    Utils.execCommand("input keyevent 4 ",true);
-                    Utils.sleep(1000);
-                    Utils.execCommand("input keyevent 4 ",true);
-                    Utils.sleep(1000);
-                    Log.d(TAG,"end");
-                    return ;
-                }*/
 
             }catch (Exception e){
                 Log.e(TAG,"Exception description = " + e.getMessage() + ",e = " + e);

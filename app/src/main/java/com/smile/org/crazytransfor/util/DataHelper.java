@@ -9,6 +9,7 @@ import android.util.Log;
 import com.smile.org.crazytransfor.model.PointData;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -46,16 +47,17 @@ public class DataHelper {
         return result;
     }
 
-    public List<PointData> getCoodinateList() {
-        List<PointData> pointList = new ArrayList<PointData>();
+    public HashMap<String,PointData> getCoodinateList() {
+        HashMap<String,PointData> pointList = new HashMap<>();
         Cursor cursor = db.query(SqliteHelper. TB_NAME, null, null , null, null, null, null);
         cursor.moveToFirst();
         Log.d(TAG,"GetCoodinateList table count =  " + cursor.getCount());
         while (!cursor.isAfterLast()) {
             PointData pointData = new PointData();
-            pointData.x = cursor.getInt(1);
-            pointData.y = cursor.getInt(2);
-            pointList.add(pointData);
+            pointData.key = cursor.getString(1);
+            pointData.x = cursor.getInt(2);
+            pointData.y = cursor.getInt(3);
+            pointList.put(pointData.key,pointData);
             cursor.moveToNext();
         }
         cursor.close();
@@ -65,6 +67,7 @@ public class DataHelper {
     // 添加users表的记录
     public Long saveCoodinate(PointData data) {
         ContentValues values = new ContentValues();
+        values.put(PointData.KEY_NAME, data.key);
         values.put(PointData.KEY_X, data.x);
         values.put(PointData.KEY_Y, data.y);
         Long row = db.insert(SqliteHelper. TB_NAME, null, values);
