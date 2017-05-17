@@ -20,7 +20,10 @@ import com.smile.org.crazytransfor.util.Utils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.TimeZone;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -61,6 +64,8 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(MainActivity.this, RemoteTransforService.class);
         intent.putExtra("action","clear");
         startService(intent);
+
+        Log.d(TAG,"time = " + DateToLong(new Date()));
     }
 
     @OnClick(R.id.btn_open)
@@ -70,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         startActivityForResult(intent, REC_REQUESTCODE);
     }
+
 
     @OnClick(R.id.btn_start_float)
     void startFloatWindows() {
@@ -92,7 +98,14 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
         myHandler = new MyHandler();
+        Log.d(TAG,"time = " + DateToLong(new Date()));
 
+    }
+    private String DateToLong(Date time){
+        SimpleDateFormat fmt = new SimpleDateFormat("yyMMddHHmm");
+        fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+        String utcTime=fmt.format(new Date());
+        return  utcTime;
     }
 
     @Override

@@ -382,7 +382,7 @@ public class RemoteTransforService extends Service {
                     Log.e(TAG,"4 not ZFB_ADD_FRIEND");
                 }
 
-                if(waitForActivity(ZFB_FRIEND,10)) {
+                if(waitForActivity(ZFB_FRIEND,6)) {
                     //点击5：转账
                     Utils.sleep(2000);
                     x = myPoint.get(4).x;
@@ -399,6 +399,22 @@ public class RemoteTransforService extends Service {
                     Utils.execCommand("input keyevent 4 ",true);
                     Utils.sleep(1500);
                     return;
+                }
+                if(waitForActivity(ZFB_FRIEND,2)) {
+                    //点击5：转账
+                    Utils.sleep(2000);
+                    x = myPoint.get(4).x;
+                    y = myPoint.get(4).y + 68;
+                    Log.d(TAG,"tap5 transfor x = " + x + ",y = " + y);
+                    Utils.execCommand("input tap " + x + " " + y,true);
+                }
+                if(waitForActivity(ZFB_FRIEND,2)) {
+                    //点击5：转账
+                    Utils.sleep(2000);
+                    x = myPoint.get(4).x;
+                    y = myPoint.get(4).y - 68;
+                    Log.d(TAG,"tap5 transfor x = " + x + ",y = " + y);
+                    Utils.execCommand("input tap " + x + " " + y,true);
                 }
 
                 //判断是否在转账界面
@@ -428,7 +444,7 @@ public class RemoteTransforService extends Service {
 
                 //确认转账后，弹出输入用户名时，返回到之前的操作
                 if(waitForActivity(ZFB_TRANSFOR,6)) {
-                    Log.d(TAG,"please input user name");
+                    Log.d(TAG,"需要输入用户名，点击取消，返回主页");
                     Utils.execCommand("input keyevent 4 ",true);
                     Utils.sleep(1000);
                     x = myPoint.get(6).x;
@@ -444,9 +460,25 @@ public class RemoteTransforService extends Service {
                     Utils.execCommand("input keyevent 4 ",true);
                     Utils.sleep(1000);
                     Utils.execCommand("input keyevent 4 ",true);
+                }
+
+                //确认转账后，弹出你已经被拉黑
+                if(waitForActivity(ZFB_TRANSFOR,6)) {
+                    Log.d(TAG,"被拉黑，点击确定，返回主页");
+                    x = 553;
+                    y = 726;
+                    Log.d(TAG,"tap6 sure transfor x = " + x + ",y = " + y);
+                    Utils.execCommand("input tap " + x + " " + y,true);
+
+                    Utils.sleep(1000);
+                    Utils.execCommand("input keyevent 4 ",true);
+                    Utils.sleep(1000);
+                    Utils.execCommand("input keyevent 4 ",true);
+                    Utils.sleep(1000);
+                    Utils.execCommand("input keyevent 4 ",true);
+                    Utils.sleep(1000);
+                    Utils.execCommand("input keyevent 4 ",true);
                     return;
-                }else{
-                    Log.e(TAG,"6 not ZFB_TRANSFOR");
                 }
 
 
