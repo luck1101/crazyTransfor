@@ -4,34 +4,58 @@
     android:id="@+id/float_layout"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:paddingTop="50dp"
     android:background="#66000000"
-    >
+    android:orientation="horizontal"
+    android:paddingTop="50dp">
 
     <Button
         android:id="@+id/btn_record"
-        android:layout_width="wrap_content"
+        android:layout_width="45dp"
         android:layout_height="wrap_content"
         android:text="@string/str_action_record"
-        />
+        android:textSize="10sp"/>
+
     <Button
         android:id="@+id/btn_start"
-        android:layout_width="wrap_content"
+        android:layout_width="45dp"
         android:layout_height="wrap_content"
         android:layout_toRightOf="@id/btn_record"
         android:text="@string/str_action_start"
-        />
+        android:textSize="10sp"/>
+    <Button
+        android:id="@+id/btn_stop"
+        android:layout_width="45dp"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/btn_record"
+        android:text="@string/str_action_stop"
+        android:textSize="10sp"/>
+    <Button
+        android:id="@+id/btn_play"
+        android:layout_width="45dp"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/btn_record"
+        android:text="@string/str_action_play"
+        android:textSize="10sp"/>
+    <Button
+        android:id="@+id/btn_pause"
+        android:layout_width="45dp"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/btn_record"
+        android:text="@string/str_action_pause"
+        android:textSize="10sp"/>
     <Button
         android:id="@+id/btn_lahei"
-        android:layout_width="wrap_content"
+        android:layout_width="60dp"
         android:layout_height="wrap_content"
         android:text="@string/str_action_lahei_err"
-        />
+        android:textSize="10sp"/>
+
     <Button
         android:id="@+id/btn_user_name"
-        android:layout_width="wrap_content"
+        android:layout_width="60dp"
         android:layout_height="wrap_content"
         android:text="@string/str_action_user_err"
-        />
+        android:textSize="10sp"/>
+
 
 </LinearLayout>

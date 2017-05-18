@@ -12,8 +12,9 @@
     <string name="str_action_save">保存</string>
     <string name="str_action_clear">清除</string>
     <string name="str_action_start">开始</string>
+    <string name="str_action_play">播放</string>
     <string name="str_action_pause">暂停</string>
-    <string name="str_action_lahei_err">被拉黑</string>
-    <string name="str_action_user_err">用户确认</string>
+    <string name="str_action_lahei_err">点确认</string>
+    <string name="str_action_user_err">点取消</string>
     <string name="str_action_point_invalid">点数不够，请重新录制</string>
 </resources>
