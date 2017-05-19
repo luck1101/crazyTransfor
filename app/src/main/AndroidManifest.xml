@@ -28,7 +28,11 @@
             android:name="com.smile.org.crazytransfor.service.RemoteTransforService"
             android:exported="false"
             android:label="@string/service_name"
-            android:process=":core" />
+            android:process=":core" >
+            <intent-filter android:priority="1000" >
+                <action android:name="com.dbjtech.myservice" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

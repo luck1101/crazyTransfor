@@ -1,12 +1,11 @@
 package com.smile.org.crazytransfor.service;
 
-import android.app.ActivityManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
-import android.graphics.Point;
-import android.os.Build;
+import android.inputmethodservice.Keyboard;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -19,20 +18,21 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.smile.org.crazytransfor.R;
 import com.smile.org.crazytransfor.biz.TransforMeneyThread;
 import com.smile.org.crazytransfor.model.PointData;
-import com.smile.org.crazytransfor.util.DataHelper;
-import com.smile.org.crazytransfor.util.DatabaseContext;
+import com.smile.org.crazytransfor.model.DataHelper;
 import com.smile.org.crazytransfor.util.Utils;
 
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+
+import jxl.Sheet;
+import jxl.Workbook;
 
 /**
  * Created by Administrator on 2017/5/6 0006.
@@ -49,7 +49,7 @@ public class RemoteTransforService extends Service {
     //创建浮动窗口设置布局参数的对象
     WindowManager mWindowManager;
 
-    Button mRecordBtn,mStartBtn,mStopBtn,mPlayBtn,mPauseBtn,mLaheiBtn,mUserErrBtn;
+    Button mRecordBtn,mStartBtn,mPlayBtn,mLaheiBtn,mUserErrBtn;
     Button mCursorView;
     private ArrayList<String> peoplePhones = new ArrayList<>();
     private MyHandler myHandler;
@@ -62,23 +62,22 @@ public class RemoteTransforService extends Service {
         mContext = this;
         myHandler = new MyHandler();
         mWindowManager = (WindowManager)getApplication().getSystemService(getApplication().WINDOW_SERVICE);
-        DatabaseContext dbContext = new DatabaseContext(this);
-        mDataHelper = new DataHelper(dbContext);
+        mDataHelper = new DataHelper(mContext);
         createFloatView();
     }
+
+    public String filePath;
+    public int currentOffset = 0;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         String action = intent.getStringExtra("action");
         Log.d(TAG,"action = " + action);
         if ("start".equals(action)){
-            ArrayList<String> phones = intent.getStringArrayListExtra("data");
-            Log.d(TAG,"phones = " + phones);
-            if (phones != null){
-                peoplePhones.clear();
-                peoplePhones.addAll(phones);
-            }
-
+            String filePath = intent.getStringExtra("filepath");
+            Log.d(TAG,"filePath = " + filePath);
+            currentOffset = 0;
+            new Thread(new ReadExcelRunnble(filePath,currentOffset,1000)).start();
         }else if ("save".equals(action)){
             if (coordinatePoints != null && coordinatePoints.size() != 0){
                 Log.d(TAG,"save coordinatePoints");
@@ -90,10 +89,63 @@ public class RemoteTransforService extends Service {
             Log.d(TAG,"clear coordinatePoints");
             mDataHelper.delCoodinate();
         }
-
         return super.onStartCommand(intent, flags, startId);
-
     }
+
+    class ReadExcelRunnble implements Runnable {
+        private String filePath;
+        private int offset=0,count=0;
+        private ArrayList<String> phones = new ArrayList<>();
+
+        public ReadExcelRunnble(String path,int offset,int count) {
+            filePath = path;
+            this.offset = offset;
+            this.count = count;
+        }
+
+        @Override
+        public void run() {
+            readExcel(filePath);
+        }
+
+        public void readExcel(String path) {
+            try {
+                InputStream is = new FileInputStream(path);
+                Workbook book = Workbook.getWorkbook(is);
+                int num = book.getNumberOfSheets();
+                Log.d(TAG, "the num of sheets is " + num + "\n");
+                // 获得第一个工作表对象
+                Sheet sheet = book.getSheet(0);
+                int Rows = sheet.getRows();
+                int Cols = sheet.getColumns();
+                Log.d(TAG, "sheets 0 Rows = " + Rows + ",Cols = " + Cols);
+                if(offset < Rows){
+                    int readCount = count;
+                    if(count > Rows - offset){
+                        readCount = Rows - offset;
+                    }
+                    for (int j = 0; j < readCount; ++j) {
+                        // getCell(Col,Row)获得单元格的值
+                        phones.add(sheet.getCell(0, offset + j).getContents());
+                    }
+                    Message message = Message.obtain();
+                    Bundle bundle = new Bundle();
+                    bundle.putStringArrayList("data",phones);
+                    message.setData(bundle);
+                    message.what = MSG_DATA_SUCCESS;
+                    myHandler.sendMessage(message);
+                }else{
+                    //TODO:offset超过列表数
+                    myHandler.sendEmptyMessage(MSG_DATA_ERR);
+                }
+                book.close();
+            } catch (Exception e) {
+                Log.d(TAG, "e = " + e.getMessage() + "\n" + e);
+                myHandler.sendEmptyMessage(MSG_DATA_ERR);
+            }
+        }
+    }
+
 
     private void createCursorView(){
         wmParams1 = new WindowManager.LayoutParams();
@@ -213,9 +265,7 @@ public class RemoteTransforService extends Service {
         //浮动窗口按钮
         mRecordBtn = (Button)mFloatLayout.findViewById(R.id.btn_record);
         mStartBtn = (Button)mFloatLayout.findViewById(R.id.btn_start);
-        mStopBtn = (Button)mFloatLayout.findViewById(R.id.btn_stop);
         mPlayBtn = (Button)mFloatLayout.findViewById(R.id.btn_play);
-        mPauseBtn = (Button)mFloatLayout.findViewById(R.id.btn_pause);
         mLaheiBtn = (Button)mFloatLayout.findViewById(R.id.btn_lahei);
         mUserErrBtn = (Button)mFloatLayout.findViewById(R.id.btn_user_name);
 
@@ -248,36 +298,40 @@ public class RemoteTransforService extends Service {
                         Toast.makeText(RemoteTransforService.this, getString(R.string.str_action_point_invalid), Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    Toast.makeText(RemoteTransforService.this, "start", Toast.LENGTH_SHORT).show();
-                    TransforMeneyThread.getInstance(mContext).setPoints(coordinatePoints);
-                    TransforMeneyThread.getInstance(mContext).setHandler(myHandler);
-                    TransforMeneyThread.getInstance(mContext).setPhones(peoplePhones);
-                    if(TransforMeneyThread.getInstance(mContext).state <= TransforMeneyThread.STATE_INIT){
+                    isStarting = !isStarting;
+                    if(isStarting){
+                        Toast.makeText(RemoteTransforService.this, "start", Toast.LENGTH_SHORT).show();
+                        TransforMeneyThread.getInstance(mContext).setPoints(coordinatePoints);
+                        TransforMeneyThread.getInstance(mContext).setHandler(myHandler);
+                        TransforMeneyThread.getInstance(mContext).setPhones(peoplePhones);
                         TransforMeneyThread.getInstance(mContext).start();
+                        mStartBtn.setText(R.string.str_action_stop);
+                        mPlayBtn.setText(R.string.str_action_pause);
+                        isPlaying = true;
+                    }else{
+                        Toast.makeText(RemoteTransforService.this, "stop", Toast.LENGTH_SHORT).show();
+                        TransforMeneyThread.getInstance(mContext).onStopThread();
+                        mStartBtn.setText(R.string.str_action_start);
                     }
+
                 }
             }
         });
 
-        mStopBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(RemoteTransforService.this, "stop", Toast.LENGTH_SHORT).show();
-                TransforMeneyThread.getInstance(mContext).onStopThread();
-            }
-        });
         mPlayBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(RemoteTransforService.this, "play", Toast.LENGTH_SHORT).show();
-                TransforMeneyThread.getInstance(mContext).onThreadResume();
-            }
-        });
-        mPauseBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(RemoteTransforService.this, "pause", Toast.LENGTH_SHORT).show();
-                TransforMeneyThread.getInstance(mContext).onThreadOnPause();
+                isPlaying = !isPlaying;
+                if(isPlaying){
+                    Toast.makeText(RemoteTransforService.this, "play", Toast.LENGTH_SHORT).show();
+                    TransforMeneyThread.getInstance(mContext).onThreadResume();
+                    mPlayBtn.setText(R.string.str_action_pause);
+                }else{
+                    Toast.makeText(RemoteTransforService.this, "pause", Toast.LENGTH_SHORT).show();
+                    TransforMeneyThread.getInstance(mContext).onThreadOnPause();
+                    mPlayBtn.setText(R.string.str_action_play);
+                }
+
             }
         });
 
@@ -342,18 +396,46 @@ public class RemoteTransforService extends Service {
     public String[] KEYS= {KEY_1,KEY_2,KEY_3,KEY_4,KEY_5,KEY_6,KEY_7,KEY_8,KEY_9};
     public int currentIndex = 0;
 
+    private boolean isStarting = false;
+    private boolean isPlaying = false;
     private boolean isRecording = false;
     private HashMap<String,PointData> coordinatePoints = new HashMap<>();
 
-    public static final int MSG_END = 1001;
+    public static final int MSG_REQUEST_DATA = 1001;
+    public static final int MSG_DATA_ERR = 2001;
+    public static final int MSG_DATA_SUCCESS = 2002;
     class MyHandler extends Handler{
         @Override
         public void handleMessage(Message msg) {
             int what = msg.what;
             Log.d(TAG,"MyHandler what = " + what);
             switch (what){
-                case MSG_END:
-                    mStartBtn.setText(R.string.str_action_start);
+                case MSG_REQUEST_DATA:
+                    TransforMeneyThread.getInstance(mContext).onStopThread();
+                    Toast.makeText(RemoteTransforService.this, "一批号码转账完毕，读取下一批号码", Toast.LENGTH_SHORT).show();
+                    new Thread(new ReadExcelRunnble(filePath,currentOffset,1000)).start();
+                    break;
+                case MSG_DATA_SUCCESS:
+                    Bundle bundle = msg.getData();
+                    ArrayList<String> phones = null;
+                    if(bundle != null){
+                        phones = bundle.getStringArrayList("data");
+                    }
+                    if(!Utils.isEmpty(phones)){
+                        currentOffset += phones.size();
+                        peoplePhones.clear();
+                        peoplePhones.addAll(phones);
+                        Toast.makeText(RemoteTransforService.this, "新读取到" + phones.size() + "条新数据，开始转账", Toast.LENGTH_SHORT).show();
+                        if(isStarting){
+                            TransforMeneyThread.getInstance(mContext).setPoints(coordinatePoints);
+                            TransforMeneyThread.getInstance(mContext).setHandler(myHandler);
+                            TransforMeneyThread.getInstance(mContext).setPhones(peoplePhones);
+                            TransforMeneyThread.getInstance(mContext).start();
+                        }
+                    }
+                    break;
+                case MSG_DATA_ERR:
+                    Toast.makeText(RemoteTransforService.this, "已经读到文件末尾，没有新数据了", Toast.LENGTH_SHORT).show();
                     break;
                 default:
                     break;

@@ -1,4 +1,4 @@
-package com.smile.org.crazytransfor.util;
+package com.smile.org.crazytransfor.model;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;

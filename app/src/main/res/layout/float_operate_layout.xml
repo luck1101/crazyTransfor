@@ -23,25 +23,11 @@
         android:text="@string/str_action_start"
         android:textSize="10sp"/>
     <Button
-        android:id="@+id/btn_stop"
-        android:layout_width="45dp"
-        android:layout_height="wrap_content"
-        android:layout_toRightOf="@id/btn_record"
-        android:text="@string/str_action_stop"
-        android:textSize="10sp"/>
-    <Button
         android:id="@+id/btn_play"
         android:layout_width="45dp"
         android:layout_height="wrap_content"
         android:layout_toRightOf="@id/btn_record"
         android:text="@string/str_action_play"
-        android:textSize="10sp"/>
-    <Button
-        android:id="@+id/btn_pause"
-        android:layout_width="45dp"
-        android:layout_height="wrap_content"
-        android:layout_toRightOf="@id/btn_record"
-        android:text="@string/str_action_pause"
         android:textSize="10sp"/>
     <Button
         android:id="@+id/btn_lahei"

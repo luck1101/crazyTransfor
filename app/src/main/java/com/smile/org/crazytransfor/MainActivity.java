@@ -9,6 +9,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -50,7 +51,6 @@ public class MainActivity extends AppCompatActivity {
 
     private String TAG = MainActivity.class.getSimpleName();
     private final int REC_REQUESTCODE = 1101;
-    private MyHandler myHandler;
 
     @OnClick(R.id.btn_save)
     void save(){
@@ -66,8 +66,6 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(MainActivity.this, RemoteTransforService.class);
         intent.putExtra("action","clear");
         startService(intent);
-
-        Log.d(TAG,"time = " + DateToLong(new Date()));
     }
 
     @OnClick(R.id.btn_open)
@@ -82,15 +80,15 @@ public class MainActivity extends AppCompatActivity {
     @OnClick(R.id.btn_start_float)
     void startFloatWindows() {
         // TODO Auto-generated method stub
+        if(TextUtils.isEmpty(edit_file_path.getText())){
+            Toast.makeText(this, "请输入文件路径", Toast.LENGTH_SHORT).show();
+            return ;
+        }
+        String filepath = edit_file_path.getText().toString();
         Intent intent = new Intent(MainActivity.this, RemoteTransforService.class);
         //启动FxService
-        myPhones.add("15280595020");
-        myPhones.add("15280595021");
-        myPhones.add("15280595022");
-        myPhones.add("15280595023");
-        myPhones.add("15280595024");
         intent.putExtra("action","start");
-        intent.putStringArrayListExtra("data", myPhones);
+        intent.putExtra("filepath",filepath);
         startService(intent);
     }
 
@@ -99,7 +97,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
-        myHandler = new MyHandler();
         Log.d(TAG,"time = " + DateToLong(new Date()));
 
     }
@@ -136,96 +133,6 @@ public class MainActivity extends AppCompatActivity {
             final String filePath = file.getAbsolutePath();
             Log.d(TAG, "onActivityResult filePath = " + filePath);
             edit_file_path.setText(filePath);
-            if (filePath.endsWith(".xls") || filePath.endsWith(".xlsx")) {
-                Log.d(TAG, "start ReadExcelRunnble thread");
-                myHandler.post(new ReadExcelRunnble(filePath));
-            } else {
-                txt_file_content.setText(R.string.file_err);
-            }
         }
     }
-
-    public static final int MSG_UPDATE_DATA = 1101;
-    public ArrayList<String> myPhones = new ArrayList<String>();
-
-    class MyHandler extends Handler {
-
-        @Override
-        public void dispatchMessage(Message msg) {
-            super.dispatchMessage(msg);
-            int what = msg.what;
-            Log.d(TAG, "msg.what =  " + what);
-            Bundle bundle = msg.getData();
-            switch (what) {
-                case MSG_UPDATE_DATA:
-                    ArrayList<String> phones = null;
-                    if (bundle != null) {
-                        phones = bundle.getStringArrayList("data");
-                    }
-                    Log.d(TAG, "phones = " + phones);
-                    StringBuffer content = new StringBuffer();
-                    if (phones == null || phones.isEmpty()) {
-                        content.append(getString(R.string.file_empty));
-                    } else {
-                        myPhones.clear();
-                        myPhones.addAll(phones);
-                        for (String phone : phones)
-                            content.append(phone + "\n");
-                    }
-                    txt_file_content.setText(content.toString());
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
-
-    class ReadExcelRunnble implements Runnable {
-        private String filePath;
-
-        public ReadExcelRunnble(String path) {
-            filePath = path;
-        }
-
-        @Override
-        public void run() {
-            readExcel(filePath);
-        }
-
-        public void readExcel(String path) {
-            try {
-                InputStream is = new FileInputStream(path);
-                Workbook book = Workbook.getWorkbook(is);
-                int num = book.getNumberOfSheets();
-                Log.d(TAG, "the num of sheets is " + num + "\n");
-                // 获得第一个工作表对象
-                Sheet sheet = book.getSheet(0);
-                int Rows = sheet.getRows();
-                int Cols = sheet.getColumns();
-                Log.d(TAG, "sheets 0 Rows = " + Rows + ",Cols = " + Cols);
-                ArrayList<String> phones = new ArrayList<>();
-                for (int i = 0; i < Cols; ++i) {
-                    for (int j = 0; j < Rows; ++j) {
-                        // getCell(Col,Row)获得单元格的值
-                        phones.add(sheet.getCell(i, j).getContents());
-                    }
-                }
-                sendMSG(phones);
-                book.close();
-            } catch (Exception e) {
-                Log.d(TAG, "e = " + e.getMessage() + "\n" + e);
-            }
-        }
-
-        public void sendMSG(ArrayList<String> content) {
-            Message msg = new Message();
-            Bundle bundle = new Bundle();
-            bundle.putStringArrayList("data", content);
-            msg.what = MSG_UPDATE_DATA;
-            msg.setData(bundle);
-            myHandler.sendMessage(msg);
-        }
-    }
-
-
 }

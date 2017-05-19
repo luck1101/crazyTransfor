@@ -1,4 +1,4 @@
-package com.smile.org.crazytransfor.util;
+package com.smile.org.crazytransfor.model;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -6,11 +6,8 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
-import com.smile.org.crazytransfor.model.PointData;
-
-import java.util.ArrayList;
+import java.io.File;
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * Created by Administrator on 2017/5/14 0014.
@@ -19,14 +16,20 @@ import java.util.List;
 public class DataHelper {
     public static String TAG = "DataHelper";
     // 数据库名称
-    private static String DB_NAME = "coodinate.db";
+    private static String DB_DIR = "/storage/sdcard0/temp/";
+    private static String DB_NAME2 = "coodinate.db";
     // 数据库版本
     private static int DB_VERSION = 2;
     private SQLiteDatabase db;
     private SqliteHelper dbHelper;
 
     public DataHelper(Context context) {
-        dbHelper = new SqliteHelper(context, DB_NAME, null, DB_VERSION );
+        File dir = new File(DB_DIR);
+        String db_file = DB_NAME2;
+        if(dir.exists()){
+            db_file = DB_DIR + DB_NAME2;
+        }
+        dbHelper = new SqliteHelper(context, db_file, null, DB_VERSION );
         db = dbHelper.getWritableDatabase();
     }
 

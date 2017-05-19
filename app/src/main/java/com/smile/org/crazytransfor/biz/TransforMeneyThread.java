@@ -23,7 +23,7 @@ public class TransforMeneyThread extends Thread {
     private Handler handler;
     private ArrayList<String> myPhones = new ArrayList<>();
     private HashMap<String,PointData> myPoint = new HashMap<>();
-    private boolean isPause = true;
+    private boolean isPause = false;
     private boolean isClose = false;
     public final static int STATE_STOP = -1;
     public final static int STATE_INIT = 0;
@@ -62,7 +62,7 @@ public class TransforMeneyThread extends Thread {
         synchronized (this){
             if(myPhones != phones){
                 myPhones.clear();
-                myPhones = phones;
+                myPhones.addAll(phones);
             }
         }
 
@@ -129,10 +129,12 @@ public class TransforMeneyThread extends Thread {
                 synchronized (myPhones) {
                     myPhones.remove(0);
                 }
-                Utils.sleep(300);
+                Utils.sleep(100);
             }else {
                 if(myPhones == null || myPhones.size() == 0){
-                    handler.sendEmptyMessage(RemoteTransforService.MSG_END);
+                    handler.sendEmptyMessage(RemoteTransforService.MSG_REQUEST_DATA);
+                    onStopThread();
+                    return;
                 }
                 Log.d(TAG,"onThreadWait");
                 onThreadWait();
@@ -173,7 +175,7 @@ public class TransforMeneyThread extends Thread {
             int x = 0,y = 0;
             if(waitForActivity(ZFB_MAIN,6)){
                 //点击1：首页
-                Utils.sleep(800);
+                Thread.currentThread().sleep(800);
                 x = myPoint.get(RemoteTransforService.KEY_1).x;
                 y = myPoint.get(RemoteTransforService.KEY_1).y;
                 Log.d(TAG,"tap1 main x = " + x + ",y = " + y);
@@ -184,7 +186,7 @@ public class TransforMeneyThread extends Thread {
 
             if(waitForActivity(ZFB_MAIN,6)){
                 //点击2：+号
-                Utils.sleep(800);
+                Thread.currentThread().sleep(800);
                 x = myPoint.get(RemoteTransforService.KEY_2).x;
                 y = myPoint.get(RemoteTransforService.KEY_2).y;
                 Log.d(TAG,"tap2 + x = " + x + ",y = " + y);
@@ -195,7 +197,7 @@ public class TransforMeneyThread extends Thread {
 
             if(waitForActivity(ZFB_MAIN,6)){
                 ////点击3：添加好友
-                Utils.sleep(800);
+                Thread.currentThread().sleep(800);
                 x = myPoint.get(RemoteTransforService.KEY_3).x;
                 y = myPoint.get(RemoteTransforService.KEY_3).y;
                 Log.d(TAG,"tap3 add friend x = " + x + ",y = " + y);
@@ -206,16 +208,16 @@ public class TransforMeneyThread extends Thread {
 
             if(waitForActivity(ZFB_ADD_FRIEND,6)){
                 //点击4：输入框
-                Utils.sleep(800);
+                Thread.currentThread().sleep(800);
                 x = myPoint.get(RemoteTransforService.KEY_4).x;
                 y = myPoint.get(RemoteTransforService.KEY_4).y;
                 Log.d(TAG,"tap4 input phone x = " + x + ",y = " + y);
                 Utils.execCommand("input tap " + x + " " + y,true);
-                Utils.sleep(1000);
+                Thread.currentThread().sleep(1000);
                 //输入号码
                 Log.d(TAG,"input text " + phone);
                 Utils.execCommand("input text " + phone,true);
-                Utils.sleep(800);
+                Thread.currentThread().sleep(800);
                 Utils.execCommand("input keyevent 66 ",true);
             }else{
                 Log.e(TAG,"4 not ZFB_ADD_FRIEND");
@@ -223,25 +225,25 @@ public class TransforMeneyThread extends Thread {
 
             if(waitForActivity(ZFB_FRIEND,6)) {
                 //点击5：转账
-                Utils.sleep(2000);
+                Thread.currentThread().sleep(2000);
                 x = myPoint.get(RemoteTransforService.KEY_5).x;
                 y = myPoint.get(RemoteTransforService.KEY_5).y;
                 Log.d(TAG,"tap5 transfor x = " + x + ",y = " + y);
                 Utils.execCommand("input tap " + x + " " + y,true);
             }else{
                 Log.e(TAG,"5 not ZFB_FRIEND,return to ZFB_MAIN");
-                Utils.sleep(1500);
+                Thread.currentThread().sleep(1500);
                 Utils.execCommand("input keyevent 4 ",true);
-                Utils.sleep(1500);
+                Thread.currentThread().sleep(1500);
                 Utils.execCommand("input keyevent 4 ",true);
-                Utils.sleep(1500);
+                Thread.currentThread().sleep(1500);
                 Utils.execCommand("input keyevent 4 ",true);
-                Utils.sleep(1500);
+                Thread.currentThread().sleep(1500);
                 return;
             }
             if(waitForActivity(ZFB_FRIEND,2)) {
                 //点击5：转账
-                Utils.sleep(2000);
+                Thread.currentThread().sleep(2000);
                 x = myPoint.get(RemoteTransforService.KEY_5).x;
                 y = myPoint.get(RemoteTransforService.KEY_5).y + 68;
                 Log.d(TAG,"tap5 transfor x = " + x + ",y = " + y);
@@ -249,7 +251,7 @@ public class TransforMeneyThread extends Thread {
             }
             if(waitForActivity(ZFB_FRIEND,2)) {
                 //点击5：转账
-                Utils.sleep(2000);
+                Thread.currentThread().sleep(2000);
                 x = myPoint.get(RemoteTransforService.KEY_5).x;
                 y = myPoint.get(RemoteTransforService.KEY_5).y - 68;
                 Log.d(TAG,"tap5 transfor x = " + x + ",y = " + y);
@@ -260,23 +262,23 @@ public class TransforMeneyThread extends Thread {
             if(waitForActivity(ZFB_TRANSFOR,6)) {
                 //输入转账金额
                 Log.d(TAG,"input text 0.01");
-                Utils.sleep(800);
+                Thread.currentThread().sleep(800);
                 Utils.execCommand("input text " + 0.01,true);
-                Utils.sleep(1000);
+                Thread.currentThread().sleep(1000);
                 Utils.execCommand("input keyevent 66 ",true);
-                Utils.sleep(1000);
+                Thread.currentThread().sleep(1000);
                 //输入备注
                 Log.d(TAG,"input text hello");
                 Utils.execCommand("input text " + "hello",true);
-                Utils.sleep(1000);
+                Thread.currentThread().sleep(1000);
                 Utils.execCommand("input keyevent 4 ",true);
-                Utils.sleep(1000);
+                Thread.currentThread().sleep(1000);
                 //点击6:确认转账
                 x = myPoint.get(RemoteTransforService.KEY_6).x;
                 y = myPoint.get(RemoteTransforService.KEY_6).y;
                 Log.d(TAG,"tap6 sure transfor x = " + x + ",y = " + y);
                 Utils.execCommand("input tap " + x + " " + y,true);
-                Utils.sleep(3000);
+                Thread.currentThread().sleep(3000);
             }else{
                 Log.e(TAG,"6 not ZFB_TRANSFOR");
             }
@@ -285,19 +287,19 @@ public class TransforMeneyThread extends Thread {
             if(waitForActivity(ZFB_TRANSFOR,6)) {
                 Log.d(TAG,"需要输入用户名，点击取消，返回主页");
                 Utils.execCommand("input keyevent 4 ",true);
-                Utils.sleep(1000);
+                Thread.currentThread().sleep(1000);
                 x = myPoint.get(RemoteTransforService.KEY_USER_NAME).x;
                 y = myPoint.get(RemoteTransforService.KEY_USER_NAME).y;
                 Log.d(TAG,"tap6 sure transfor x = " + x + ",y = " + y);
                 Utils.execCommand("input tap " + x + " " + y,true);
 
-                Utils.sleep(1000);
+                Thread.currentThread().sleep(1000);
                 Utils.execCommand("input keyevent 4 ",true);
-                Utils.sleep(1000);
+                Thread.currentThread().sleep(1000);
                 Utils.execCommand("input keyevent 4 ",true);
-                Utils.sleep(1000);
+                Thread.currentThread().sleep(1000);
                 Utils.execCommand("input keyevent 4 ",true);
-                Utils.sleep(1000);
+                Thread.currentThread().sleep(1000);
                 Utils.execCommand("input keyevent 4 ",true);
             }
 
@@ -309,13 +311,13 @@ public class TransforMeneyThread extends Thread {
                 Log.d(TAG,"tap6 sure transfor x = " + x + ",y = " + y);
                 Utils.execCommand("input tap " + x + " " + y,true);
 
-                Utils.sleep(1000);
+                Thread.currentThread().sleep(1000);
                 Utils.execCommand("input keyevent 4 ",true);
-                Utils.sleep(1000);
+                Thread.currentThread().sleep(1000);
                 Utils.execCommand("input keyevent 4 ",true);
-                Utils.sleep(1000);
+                Thread.currentThread().sleep(1000);
                 Utils.execCommand("input keyevent 4 ",true);
-                Utils.sleep(1000);
+                Thread.currentThread().sleep(1000);
                 Utils.execCommand("input keyevent 4 ",true);
                 return;
             }
@@ -323,7 +325,7 @@ public class TransforMeneyThread extends Thread {
 
             if(waitForActivity(ZFB_TRANSFOR_SUCCES,6)){
                 //点击7:完成
-                Utils.sleep(800);
+                Thread.currentThread().sleep(800);
                 x = myPoint.get(RemoteTransforService.KEY_7).x;
                 y = myPoint.get(RemoteTransforService.KEY_7).y;
                 Log.d(TAG,"tap7 complement x = " + x + ",y = " + y);
@@ -333,7 +335,7 @@ public class TransforMeneyThread extends Thread {
             }
 
             if(waitForActivity(ZFB_ENTER_PERSON,6)){
-                Utils.sleep(1500);
+                Thread.currentThread().sleep(1500);
                 Utils.execCommand("input keyevent 4 ",true);
                 Log.d(TAG,"end");
             }else{
@@ -345,10 +347,14 @@ public class TransforMeneyThread extends Thread {
         }
     }
 
-    private boolean waitForActivity(String activity,int count){
+    private boolean waitForActivity(String activity,int count) throws Exception{
         boolean result = false;
         while(count > 0){
-            Utils.sleep(500);
+            //Utils.sleep(500);
+            Thread.currentThread().sleep(500);
+            if(isPause){
+                return false;
+            }
             if(Utils.getTopActivityInfo(mContext).topActivityName.contains(activity)){
                 result = true;
                 break;

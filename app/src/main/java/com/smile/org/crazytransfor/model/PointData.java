@@ -5,7 +5,7 @@ package com.smile.org.crazytransfor.model;
  */
 
 public class PointData {
-    public static final String KEY_NAME = "name";
+    public static final String KEY_NAME = "key";
     public static final String KEY_X = "x";
     public static final String KEY_Y = "y";
     public String key;
