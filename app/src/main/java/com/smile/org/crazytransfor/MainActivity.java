@@ -2,42 +2,36 @@ package com.smile.org.crazytransfor;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Environment;
-import android.os.Handler;
-import android.os.Message;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.os.Environment;
+import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.smile.org.crazytransfor.service.RemoteTransforService;
-import com.smile.org.crazytransfor.util.Utils;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-import jxl.Sheet;
-import jxl.Workbook;
 
 public class MainActivity extends AppCompatActivity {
 
     @BindView(R.id.edit_file_path)
     EditText edit_file_path;
+    @BindView(R.id.edit_transfor_money)
+    EditText edit_transfor_money;
     @BindView(R.id.btn_open)
     Button btn_open;
     @BindView(R.id.btn_start_float)
@@ -46,26 +40,34 @@ public class MainActivity extends AppCompatActivity {
     Button btn_save;
     @BindView(R.id.btn_clear)
     Button btn_clear;
-    @BindView(R.id.txt_file_content)
-    TextView txt_file_content;
 
     private String TAG = MainActivity.class.getSimpleName();
     private final int REC_REQUESTCODE = 1101;
+    private boolean isStart = false;
 
     @OnClick(R.id.btn_save)
     void save(){
         // TODO Auto-generated method stub
-        Intent intent = new Intent(MainActivity.this, RemoteTransforService.class);
-        intent.putExtra("action","save");
-        startService(intent);
+        if(isStart){
+            Intent intent = new Intent(MainActivity.this, RemoteTransforService.class);
+            intent.putExtra("action","save");
+            startService(intent);
+        }else{
+            Toast.makeText(this, "服务未启动", Toast.LENGTH_SHORT).show();
+        }
+
     }
 
     @OnClick(R.id.btn_clear)
     void clear(){
         // TODO Auto-generated method stub
-        Intent intent = new Intent(MainActivity.this, RemoteTransforService.class);
-        intent.putExtra("action","clear");
-        startService(intent);
+        if(isStart){
+            Intent intent = new Intent(MainActivity.this, RemoteTransforService.class);
+            intent.putExtra("action","clear");
+            startService(intent);
+        }else{
+            Toast.makeText(this, "服务未启动", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @OnClick(R.id.btn_open)
@@ -76,20 +78,34 @@ public class MainActivity extends AppCompatActivity {
         startActivityForResult(intent, REC_REQUESTCODE);
     }
 
+    @OnClick(R.id.btn_stop)
+    void stopService() {
+        Intent intent = new Intent(MainActivity.this, RemoteTransforService.class);
+        stopService(intent);
+        isStart = false;
+    }
+
 
     @OnClick(R.id.btn_start_float)
     void startFloatWindows() {
+        float money = 0.01f;
         // TODO Auto-generated method stub
         if(TextUtils.isEmpty(edit_file_path.getText())){
             Toast.makeText(this, "请输入文件路径", Toast.LENGTH_SHORT).show();
             return ;
+        }
+        if(!TextUtils.isEmpty(edit_transfor_money.getText())){
+            money = Float.valueOf(edit_transfor_money.getText().toString());
         }
         String filepath = edit_file_path.getText().toString();
         Intent intent = new Intent(MainActivity.this, RemoteTransforService.class);
         //启动FxService
         intent.putExtra("action","start");
         intent.putExtra("filepath",filepath);
+        intent.putExtra("money",money);
+        Log.d(TAG,"filepath = " + filepath + ",money = " + money);
         startService(intent);
+        isStart = true;
     }
 
     @Override
@@ -134,5 +150,32 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "onActivityResult filePath = " + filePath);
             edit_file_path.setText(filePath);
         }
+    }
+
+    /**
+     * 判断某个服务是否正在运行的方法
+     *
+     * @param mContext
+     * @param serviceName
+     *            是包名+服务的类名（例如：net.loonggg.testbackstage.TestService）
+     * @return true代表正在运行，false代表服务没有正在运行
+     */
+    public boolean isServiceWork(Context mContext, String serviceName) {
+        boolean isWork = false;
+        ActivityManager myAM = (ActivityManager) mContext
+                .getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningServiceInfo> myList = myAM.getRunningServices(100);
+        if (myList.size() <= 0) {
+            return false;
+        }
+        for (int i = 0; i < myList.size(); i++) {
+            String mName = myList.get(i).service.getClassName().toString();
+            Log.d(TAG,"mName = " + mName);
+            if (mName.contains(serviceName)) {
+                isWork = true;
+                break;
+            }
+        }
+        return isWork;
     }
 }

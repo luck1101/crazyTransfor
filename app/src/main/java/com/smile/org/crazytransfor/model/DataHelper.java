@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Environment;
 import android.util.Log;
 
 import java.io.File;
@@ -16,7 +17,7 @@ import java.util.HashMap;
 public class DataHelper {
     public static String TAG = "DataHelper";
     // 数据库名称
-    private static String DB_DIR = "/storage/sdcard0/temp/";
+    private static String DB_DIR = Environment.getExternalStorageDirectory().getAbsolutePath();//"/storage/sdcard0/temp/";
     private static String DB_NAME2 = "coodinate.db";
     // 数据库版本
     private static int DB_VERSION = 2;
@@ -24,13 +25,24 @@ public class DataHelper {
     private SqliteHelper dbHelper;
 
     public DataHelper(Context context) {
-        File dir = new File(DB_DIR);
         String db_file = DB_NAME2;
-        if(dir.exists()){
-            db_file = DB_DIR + DB_NAME2;
+        if(isExistSDCard()){
+            File crazy = new File(DB_DIR + File.separator + "crazy");
+            if(!crazy.exists()){
+                crazy.mkdir();
+            }
+            db_file = crazy + File.separator + DB_NAME2;
         }
         dbHelper = new SqliteHelper(context, db_file, null, DB_VERSION );
         db = dbHelper.getWritableDatabase();
+    }
+
+    private boolean isExistSDCard() {
+        if (android.os.Environment.getExternalStorageState().equals(android.os.Environment.MEDIA_MOUNTED)) {
+            return true;
+        } else{
+            return false;
+        }
     }
 
     public void close() {

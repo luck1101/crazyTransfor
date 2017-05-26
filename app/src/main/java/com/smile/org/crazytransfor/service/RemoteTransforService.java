@@ -68,6 +68,7 @@ public class RemoteTransforService extends Service {
 
     public String filePath;
     public int currentOffset = 0;
+    public float money = 0.01f;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -75,7 +76,8 @@ public class RemoteTransforService extends Service {
         Log.d(TAG,"action = " + action);
         if ("start".equals(action)){
             String filePath = intent.getStringExtra("filepath");
-            Log.d(TAG,"filePath = " + filePath);
+            money = intent.getFloatExtra("money",0.01f);
+            Log.d(TAG,"filePath = " + filePath + ",money = " + money);
             currentOffset = 0;
             new Thread(new ReadExcelRunnble(filePath,currentOffset,1000)).start();
         }else if ("save".equals(action)){

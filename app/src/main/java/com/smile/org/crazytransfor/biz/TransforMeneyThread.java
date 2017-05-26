@@ -31,6 +31,7 @@ public class TransforMeneyThread extends Thread {
     public final static int STATE_PLAY = 3;
     public final static int STATE_PAUSE = 4;
     public int state = STATE_INIT;
+    private float money = 0.01f;
 
     private TransforMeneyThread(Context c){
         mContext = c;
@@ -42,6 +43,10 @@ public class TransforMeneyThread extends Thread {
             single = new TransforMeneyThread(c);
         }
         return single;
+    }
+
+    public void setMoney(float m){
+        this.money = m;
     }
 
     public void setHandler(Handler h){
@@ -263,7 +268,7 @@ public class TransforMeneyThread extends Thread {
                 //输入转账金额
                 Log.d(TAG,"input text 0.01");
                 Thread.currentThread().sleep(800);
-                Utils.execCommand("input text " + 0.01,true);
+                Utils.execCommand("input text " + money,true);
                 Thread.currentThread().sleep(1000);
                 Utils.execCommand("input keyevent 66 ",true);
                 Thread.currentThread().sleep(1000);
