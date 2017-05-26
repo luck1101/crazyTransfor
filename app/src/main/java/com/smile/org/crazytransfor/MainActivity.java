@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -43,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
 
     private String TAG = MainActivity.class.getSimpleName();
     private final int REC_REQUESTCODE = 1101;
-    private boolean isStart = false;
+    private static boolean isStart = false;
 
     @OnClick(R.id.btn_save)
     void save(){
@@ -113,9 +114,21 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
-        Log.d(TAG,"time = " + DateToLong(new Date()));
-
+        Log.d(TAG,"onCreate()");
     }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.d(TAG,"onStart()");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d(TAG,"onResume()");
+    }
+
     private String DateToLong(Date time){
         SimpleDateFormat fmt = new SimpleDateFormat("yyMMddHHmm");
         fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
