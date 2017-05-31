@@ -15,6 +15,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.smile.org.crazytransfor.model.SharePreferenceUtil;
 import com.smile.org.crazytransfor.service.RemoteTransforService;
 
 import java.io.File;
@@ -104,6 +105,7 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra("action","start");
         intent.putExtra("filepath",filepath);
         intent.putExtra("money",money);
+        SharePreferenceUtil.getInstance(MainActivity.this).save(SharePreferenceUtil.KEY_POSITION,0);
         Log.d(TAG,"filepath = " + filepath + ",money = " + money);
         startService(intent);
         isStart = true;
@@ -114,7 +116,15 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+        Log.d(TAG,"isstart = " + isStart);
         Log.d(TAG,"onCreate()");
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        Log.d(TAG,"isstart = " + isStart);
+        Log.d(TAG,"onNewIntent()");
     }
 
     @Override

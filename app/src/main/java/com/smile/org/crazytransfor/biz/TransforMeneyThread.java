@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.util.Log;
 
 import com.smile.org.crazytransfor.model.PointData;
+import com.smile.org.crazytransfor.model.SharePreferenceUtil;
 import com.smile.org.crazytransfor.service.RemoteTransforService;
 import com.smile.org.crazytransfor.util.Utils;
 
@@ -134,6 +135,7 @@ public class TransforMeneyThread extends Thread {
                 synchronized (myPhones) {
                     myPhones.remove(0);
                 }
+                SharePreferenceUtil.getInstance(mContext).autoAdd(SharePreferenceUtil.KEY_POSITION);
                 Utils.sleep(100);
             }else {
                 if(myPhones == null || myPhones.size() == 0){

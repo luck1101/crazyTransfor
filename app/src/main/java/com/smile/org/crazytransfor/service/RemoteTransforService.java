@@ -24,6 +24,7 @@ import com.smile.org.crazytransfor.R;
 import com.smile.org.crazytransfor.biz.TransforMeneyThread;
 import com.smile.org.crazytransfor.model.PointData;
 import com.smile.org.crazytransfor.model.DataHelper;
+import com.smile.org.crazytransfor.model.SharePreferenceUtil;
 import com.smile.org.crazytransfor.util.Utils;
 
 import java.io.FileInputStream;
@@ -77,8 +78,8 @@ public class RemoteTransforService extends Service {
         if ("start".equals(action)){
             String filePath = intent.getStringExtra("filepath");
             money = intent.getFloatExtra("money",0.01f);
-            Log.d(TAG,"filePath = " + filePath + ",money = " + money);
-            currentOffset = 0;
+            currentOffset = SharePreferenceUtil.getInstance(getApplicationContext()).getIntValue(SharePreferenceUtil.KEY_POSITION);
+            Log.d(TAG,"filePath = " + filePath + ",money = " + money + ",currentOffset = " + currentOffset);
             new Thread(new ReadExcelRunnble(filePath,currentOffset,1000)).start();
         }else if ("save".equals(action)){
             if (coordinatePoints != null && coordinatePoints.size() != 0){
