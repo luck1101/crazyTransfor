@@ -20,7 +20,7 @@ public class MyApplication extends Application implements Thread.UncaughtExcepti
 
     @Override
     public void uncaughtException(Thread thread, Throwable throwable) {
-        Log.e(TAG,"thread.name = " + thread.getName() + ",thread.id = " + thread.getId() + ",throwable = " + throwable);
+        Log.e(TAG,"thread.name = " + thread.getName() + ",thread.id = " + thread.getId() + ",throwable = " + Log.getStackTraceString(throwable));
         SystemClock.sleep(2000);
         android.os.Process.killProcess(android.os.Process.myPid());
     }

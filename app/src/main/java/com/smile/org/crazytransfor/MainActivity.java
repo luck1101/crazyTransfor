@@ -11,6 +11,8 @@ import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -52,7 +54,9 @@ public class MainActivity extends AppCompatActivity {
         // TODO Auto-generated method stub
         if(isStart){
             Intent intent = new Intent(MainActivity.this, RemoteTransforService.class);
-            intent.putExtra("action","save");
+            Bundle bundle  = new Bundle();
+            bundle.putString("action","save");
+            intent.putExtras(bundle);
             startService(intent);
         }else{
             Toast.makeText(this, "服务未启动", Toast.LENGTH_SHORT).show();
@@ -65,7 +69,9 @@ public class MainActivity extends AppCompatActivity {
         // TODO Auto-generated method stub
         if(isStart){
             Intent intent = new Intent(MainActivity.this, RemoteTransforService.class);
-            intent.putExtra("action","clear");
+            Bundle bundle  = new Bundle();
+            bundle.putString("action","clear");
+            intent.putExtras(bundle);
             startService(intent);
         }else{
             Toast.makeText(this, "服务未启动", Toast.LENGTH_SHORT).show();
@@ -90,22 +96,54 @@ public class MainActivity extends AppCompatActivity {
 
     @OnClick(R.id.btn_start_float)
     void startFloatWindows() {
-        float money = 0.01f;
         // TODO Auto-generated method stub
         if(TextUtils.isEmpty(edit_file_path.getText())){
             Toast.makeText(this, "请输入文件路径", Toast.LENGTH_SHORT).show();
             return ;
         }
+        final int currentOffset = SharePreferenceUtil.getInstance(getApplicationContext()).getIntValue(SharePreferenceUtil.KEY_POSITION);
+        if(currentOffset > 0 ) {
+            // TODO: 2017/6/2
+            final ConfirmDialog confirmDialog = new ConfirmDialog(this, R.style.white_bg_dialog);
+            confirmDialog.setConfirmClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Log.d(TAG,"sure");
+                    confirmDialog.dismiss();
+                    startRemoteService();
+                }
+            });
+            confirmDialog.setCancelClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Log.d(TAG,"cancel");
+                    SharePreferenceUtil.getInstance(getApplicationContext()).save(SharePreferenceUtil.KEY_POSITION, 0);
+                    confirmDialog.dismiss();
+                    startRemoteService();
+                }
+            });
+            confirmDialog.setCanceledOnTouchOutside(true);
+            confirmDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+            confirmDialog.show();
+        }else{
+            startRemoteService();
+        }
+
+    }
+
+    private void startRemoteService(){
+        float money = 0.01f;
         if(!TextUtils.isEmpty(edit_transfor_money.getText())){
             money = Float.valueOf(edit_transfor_money.getText().toString());
         }
         String filepath = edit_file_path.getText().toString();
         Intent intent = new Intent(MainActivity.this, RemoteTransforService.class);
         //启动FxService
-        intent.putExtra("action","start");
-        intent.putExtra("filepath",filepath);
-        intent.putExtra("money",money);
-        SharePreferenceUtil.getInstance(MainActivity.this).save(SharePreferenceUtil.KEY_POSITION,0);
+        Bundle bundle  = new Bundle();
+        bundle.putString("action","start");
+        bundle.putString("filepath",filepath);
+        bundle.putFloat("money",money);
+        intent.putExtras(bundle);
         Log.d(TAG,"filepath = " + filepath + ",money = " + money);
         startService(intent);
         isStart = true;

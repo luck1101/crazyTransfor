@@ -8,4 +8,15 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
+    <style name="white_bg_dialog" parent="@android:style/Theme.Dialog">
+        <!--边框-->
+        <item name="android:windowFrame">@null</item>
+        <!--是否浮现在activity之上-->
+        <item name="android:windowIsFloating">true</item>
+        <!--无标题-->
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@drawable/progress_img_popbg</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+
 </resources>

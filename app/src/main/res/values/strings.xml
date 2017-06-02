@@ -9,8 +9,8 @@
     <string name="start_float">启动悬浮框</string>
     <string name="str_action_record">录制</string>
     <string name="str_action_stop">停止</string>
-    <string name="str_action_save">保存</string>
-    <string name="str_action_clear">清除</string>
+    <string name="str_action_save">保存数据</string>
+    <string name="str_action_clear">清除数据</string>
     <string name="str_action_start">开始</string>
     <string name="str_action_play">播放</string>
     <string name="str_action_pause">暂停</string>
