@@ -29,10 +29,18 @@
         <service
             android:name="com.smile.org.crazytransfor.service.RemoteTransforService"
             android:exported="false"
-            android:label="@string/service_name"
-            android:process=":core" >
+            android:label="@string/transfor_service_name"
+             >
             <intent-filter android:priority="1000" >
                 <action android:name="com.dbjtech.myservice" />
+            </intent-filter>
+        </service>
+        <service
+            android:name="com.smile.org.crazytransfor.module.log.LogFileStatService"
+            android:label="@string/log_service_name"
+             >
+            <intent-filter>
+                <action android:name="com.gjj.common.module.logService" />
             </intent-filter>
         </service>
     </application>

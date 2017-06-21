@@ -4,13 +4,11 @@ import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -18,6 +16,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.smile.org.crazytransfor.model.SharePreferenceUtil;
+import com.smile.org.crazytransfor.module.log.L;
 import com.smile.org.crazytransfor.service.RemoteTransforService;
 
 import java.io.File;
@@ -29,6 +28,7 @@ import java.util.TimeZone;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -49,31 +49,33 @@ public class MainActivity extends AppCompatActivity {
     private final int REC_REQUESTCODE = 1101;
     private static boolean isStart = false;
 
+
+
     @OnClick(R.id.btn_save)
-    void save(){
+    void save() {
         // TODO Auto-generated method stub
-        if(isStart){
+        if (isStart) {
             Intent intent = new Intent(MainActivity.this, RemoteTransforService.class);
-            Bundle bundle  = new Bundle();
-            bundle.putString("action","save");
+            Bundle bundle = new Bundle();
+            bundle.putString("action", "save");
             intent.putExtras(bundle);
             startService(intent);
-        }else{
+        } else {
             Toast.makeText(this, "服务未启动", Toast.LENGTH_SHORT).show();
         }
 
     }
 
     @OnClick(R.id.btn_clear)
-    void clear(){
+    void clear() {
         // TODO Auto-generated method stub
-        if(isStart){
+        if (isStart) {
             Intent intent = new Intent(MainActivity.this, RemoteTransforService.class);
-            Bundle bundle  = new Bundle();
-            bundle.putString("action","clear");
+            Bundle bundle = new Bundle();
+            bundle.putString("action", "clear");
             intent.putExtras(bundle);
             startService(intent);
-        }else{
+        } else {
             Toast.makeText(this, "服务未启动", Toast.LENGTH_SHORT).show();
         }
     }
@@ -97,18 +99,19 @@ public class MainActivity extends AppCompatActivity {
     @OnClick(R.id.btn_start_float)
     void startFloatWindows() {
         // TODO Auto-generated method stub
-        if(TextUtils.isEmpty(edit_file_path.getText())){
+        if (TextUtils.isEmpty(edit_file_path.getText())) {
             Toast.makeText(this, "请输入文件路径", Toast.LENGTH_SHORT).show();
-            return ;
+            return;
         }
-        final int currentOffset = SharePreferenceUtil.getInstance(getApplicationContext()).getIntValue(SharePreferenceUtil.KEY_POSITION);
-        if(currentOffset > 0 ) {
+        final int currentOffset = SharePreferenceUtil.getInstance().getIntValue(SharePreferenceUtil.KEY_POSITION);
+        L.d( "startFloatWindows() currentOffset = " + currentOffset);
+        if (currentOffset > 0) {
             // TODO: 2017/6/2
             final ConfirmDialog confirmDialog = new ConfirmDialog(this, R.style.white_bg_dialog);
             confirmDialog.setConfirmClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    Log.d(TAG,"sure");
+                    L.d( "sure");
                     confirmDialog.dismiss();
                     startRemoteService();
                 }
@@ -116,8 +119,8 @@ public class MainActivity extends AppCompatActivity {
             confirmDialog.setCancelClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    Log.d(TAG,"cancel");
-                    SharePreferenceUtil.getInstance(getApplicationContext()).save(SharePreferenceUtil.KEY_POSITION, 0);
+                    L.d( "cancel");
+                    SharePreferenceUtil.getInstance().save(SharePreferenceUtil.KEY_POSITION, 0);
                     confirmDialog.dismiss();
                     startRemoteService();
                 }
@@ -125,26 +128,26 @@ public class MainActivity extends AppCompatActivity {
             confirmDialog.setCanceledOnTouchOutside(true);
             confirmDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
             confirmDialog.show();
-        }else{
+        } else {
             startRemoteService();
         }
 
     }
 
-    private void startRemoteService(){
+    private void startRemoteService() {
         float money = 0.01f;
-        if(!TextUtils.isEmpty(edit_transfor_money.getText())){
+        if (!TextUtils.isEmpty(edit_transfor_money.getText())) {
             money = Float.valueOf(edit_transfor_money.getText().toString());
         }
         String filepath = edit_file_path.getText().toString();
         Intent intent = new Intent(MainActivity.this, RemoteTransforService.class);
         //启动FxService
-        Bundle bundle  = new Bundle();
-        bundle.putString("action","start");
-        bundle.putString("filepath",filepath);
-        bundle.putFloat("money",money);
+        Bundle bundle = new Bundle();
+        bundle.putString("action", "start");
+        bundle.putString("filepath", filepath);
+        bundle.putFloat("money", money);
         intent.putExtras(bundle);
-        Log.d(TAG,"filepath = " + filepath + ",money = " + money);
+        L.d( "filepath = " + filepath + ",money = " + money);
         startService(intent);
         isStart = true;
     }
@@ -154,34 +157,34 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
-        Log.d(TAG,"isstart = " + isStart);
-        Log.d(TAG,"onCreate()");
+        L.d( "isstart = " + isStart);
+        L.d( "onCreate()");
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        Log.d(TAG,"isstart = " + isStart);
-        Log.d(TAG,"onNewIntent()");
+        L.d( "isstart = " + isStart);
+        L.d( "onNewIntent()");
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        Log.d(TAG,"onStart()");
+        L.d( "onStart()");
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG,"onResume()");
+        L.d( "onResume()");
     }
 
-    private String DateToLong(Date time){
+    private String DateToLong(Date time) {
         SimpleDateFormat fmt = new SimpleDateFormat("yyMMddHHmm");
         fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
-        String utcTime=fmt.format(new Date());
-        return  utcTime;
+        String utcTime = fmt.format(new Date());
+        return utcTime;
     }
 
     @Override
@@ -208,7 +211,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             final String filePath = file.getAbsolutePath();
-            Log.d(TAG, "onActivityResult filePath = " + filePath);
+            L.d( "onActivityResult filePath = " + filePath);
             edit_file_path.setText(filePath);
         }
     }
@@ -217,8 +220,7 @@ public class MainActivity extends AppCompatActivity {
      * 判断某个服务是否正在运行的方法
      *
      * @param mContext
-     * @param serviceName
-     *            是包名+服务的类名（例如：net.loonggg.testbackstage.TestService）
+     * @param serviceName 是包名+服务的类名（例如：net.loonggg.testbackstage.TestService）
      * @return true代表正在运行，false代表服务没有正在运行
      */
     public boolean isServiceWork(Context mContext, String serviceName) {
@@ -231,7 +233,7 @@ public class MainActivity extends AppCompatActivity {
         }
         for (int i = 0; i < myList.size(); i++) {
             String mName = myList.get(i).service.getClassName().toString();
-            Log.d(TAG,"mName = " + mName);
+            L.d( "mName = " + mName);
             if (mName.contains(serviceName)) {
                 isWork = true;
                 break;

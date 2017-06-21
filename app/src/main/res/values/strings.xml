@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">crazytransfor</string>
-    <string name="service_name">crazytransforService</string>
+    <string name="transfor_service_name">crazytransforService</string>
+    <string name="log_service_name">LogFileStatService</string>
     <string name="description">文件路径:</string>
     <string name="description2">文件内容:</string>
     <string name="file_err">文件格式不对</string>

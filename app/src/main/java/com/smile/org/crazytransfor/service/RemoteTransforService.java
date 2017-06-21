@@ -4,13 +4,11 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
-import android.inputmethodservice.Keyboard;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.support.annotation.Nullable;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -22,22 +20,22 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.smile.org.crazytransfor.ConfirmDialog;
 import com.smile.org.crazytransfor.R;
 import com.smile.org.crazytransfor.biz.TransforMeneyThread;
-import com.smile.org.crazytransfor.model.PointData;
 import com.smile.org.crazytransfor.model.DataHelper;
+import com.smile.org.crazytransfor.model.PointData;
 import com.smile.org.crazytransfor.model.SharePreferenceUtil;
+import com.smile.org.crazytransfor.module.log.L;
 import com.smile.org.crazytransfor.util.Utils;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.ExecutionException;
 
 import jxl.Sheet;
 import jxl.Workbook;
+
 
 /**
  * Created by Administrator on 2017/5/6 0006.
@@ -64,7 +62,7 @@ public class RemoteTransforService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.i(TAG, "onCreate()");
+        L.i( "onCreate()");
         mContext = this;
         myHandler = new MyHandler();
         mWindowManager = (WindowManager)getApplication().getSystemService(getApplication().WINDOW_SERVICE);
@@ -78,25 +76,28 @@ public class RemoteTransforService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        if(intent == null){
+            return super.onStartCommand(intent, flags, startId);
+        }
         Bundle bundle = intent.getExtras();
         if(bundle != null){
             String action = bundle.getString("action");
-            Log.d(TAG,"action = " + action);
+            L.d("action = " + action);
             if ("start".equals(action)){
                 filePath = bundle.getString("filepath");
                 money = bundle.getFloat("money",0.01f);
-                int currentOffset = SharePreferenceUtil.getInstance(getApplicationContext()).getIntValue(SharePreferenceUtil.KEY_POSITION);
-                Log.d(TAG,"filePath = " + filePath + ",money = " + money + ",currentOffset = " + currentOffset);
+                int currentOffset = SharePreferenceUtil.getInstance().getIntValue(SharePreferenceUtil.KEY_POSITION);
+                L.d("filePath = " + filePath + ",money = " + money + ",currentOffset = " + currentOffset);
                 new Thread(new ReadExcelRunnble(filePath,currentOffset,COUNT)).start();
             }else if ("save".equals(action)){
                 if (coordinatePoints != null && coordinatePoints.size() != 0){
-                    Log.d(TAG,"save coordinatePoints");
+                    L.d("save coordinatePoints");
                     for (String key : coordinatePoints.keySet()){
                         mDataHelper.saveCoodinate(coordinatePoints.get(key));
                     }
                 }
             }else if ("clear".equals(action)){
-                Log.d(TAG,"clear coordinatePoints");
+                L.d("clear coordinatePoints");
                 mDataHelper.delCoodinate();
             }
         }
@@ -124,12 +125,12 @@ public class RemoteTransforService extends Service {
                 InputStream is = new FileInputStream(path);
                 Workbook book = Workbook.getWorkbook(is);
                 int num = book.getNumberOfSheets();
-                Log.d(TAG, "the num of sheets is " + num + "\n");
+                L.d( "the num of sheets is " + num + "\n");
                 // 获得第一个工作表对象
                 Sheet sheet = book.getSheet(0);
                 int Rows = sheet.getRows();
                 int Cols = sheet.getColumns();
-                Log.d(TAG, "sheets 0 Rows = " + Rows + ",Cols = " + Cols);
+                L.d( "sheets 0 Rows = " + Rows + ",Cols = " + Cols);
                 if(offset < Rows){
                     int readCount = count;
                     if(count > Rows - offset){
@@ -151,7 +152,7 @@ public class RemoteTransforService extends Service {
                 }
                 book.close();
             } catch (Exception e) {
-                Log.d(TAG, "e = " + e.getMessage() + "\n" + e);
+                L.d( "e = " + e.getMessage() + "\n" + e);
                 myHandler.sendEmptyMessage(MSG_DATA_ERR);
             }
         }
@@ -218,7 +219,7 @@ public class RemoteTransforService extends Service {
             mCursorView.getLocationOnScreen(location);
             int x = location[0] + mCursorView.getMeasuredWidth()/2;
             int y = location[1] + mCursorView.getMeasuredHeight()/2;
-            Log.d(TAG, "Screen X = "+ x + ",Y = " + y);
+            L.d( "Screen X = "+ x + ",Y = " + y);
             data.x = x;
             data.y = y;
         }else{
@@ -297,7 +298,7 @@ public class RemoteTransforService extends Service {
                     PointData addPoint = getCursorViewCoordinate();
                     addPoint.key = KEYS[currentIndex];
                     currentIndex++;
-                    Log.d(TAG,"addPoint = " + addPoint);
+                    L.d("addPoint = " + addPoint);
                     Toast.makeText(RemoteTransforService.this, addPoint.key+"("+addPoint.x+","+addPoint.y+")", Toast.LENGTH_SHORT).show();
                     coordinatePoints.put(addPoint.key,addPoint);
                     mStartBtn.setText("+"+coordinatePoints.size());
@@ -374,7 +375,7 @@ public class RemoteTransforService extends Service {
             public void onClick(View v) {
                 PointData addPoint = getCursorViewCoordinate();
                 addPoint.key = KEY_LAHEI;
-                Log.d(TAG,"addPoint = " + addPoint);
+                L.d("addPoint = " + addPoint);
                 Toast.makeText(RemoteTransforService.this, "用户被拉黑，点击确认("+addPoint.x+","+addPoint.y+")", Toast.LENGTH_SHORT).show();
                 coordinatePoints.put(addPoint.key,addPoint);
             }
@@ -385,7 +386,7 @@ public class RemoteTransforService extends Service {
             public void onClick(View v) {
                 PointData addPoint = getCursorViewCoordinate();
                 addPoint.key = KEY_USER_NAME;
-                Log.d(TAG,"addPoint = " + addPoint);
+                L.d("addPoint = " + addPoint);
                 Toast.makeText(RemoteTransforService.this, "转账需要输入姓氏，点击取消("+addPoint.x+","+addPoint.y+")", Toast.LENGTH_SHORT).show();
                 coordinatePoints.put(addPoint.key,addPoint);
             }
@@ -420,12 +421,12 @@ public class RemoteTransforService extends Service {
         @Override
         public void handleMessage(Message msg) {
             int what = msg.what;
-            Log.d(TAG,"MyHandler what = " + what);
+            L.d("MyHandler what = " + what);
             switch (what){
                 case MSG_REQUEST_DATA:
                     TransforMeneyThread.getInstance(mContext).onStopThread();
                     Toast.makeText(RemoteTransforService.this, "一批号码转账完毕，读取下一批号码", Toast.LENGTH_SHORT).show();
-                    int position = SharePreferenceUtil.getInstance(getApplicationContext()).getIntValue(SharePreferenceUtil.KEY_POSITION);
+                    int position = SharePreferenceUtil.getInstance().getIntValue(SharePreferenceUtil.KEY_POSITION);
                     new Thread(new ReadExcelRunnble(filePath,position,COUNT)).start();
                     break;
                 case MSG_DATA_SUCCESS:
@@ -448,9 +449,10 @@ public class RemoteTransforService extends Service {
                     break;
                 case MSG_DATA_ERR:
                     Toast.makeText(RemoteTransforService.this, "已经读到文件末尾，没有新数据了", Toast.LENGTH_SHORT).show();
+                    stopSelf();
                     break;
                 case MSG_REQUEST_UPDATE_VIEW:
-                    int position2 = SharePreferenceUtil.getInstance(getApplicationContext()).getIntValue(SharePreferenceUtil.KEY_POSITION);
+                    int position2 = SharePreferenceUtil.getInstance().getIntValue(SharePreferenceUtil.KEY_POSITION);
                     mCount.setText(Integer.toString(position2));
                     break;
                 default:

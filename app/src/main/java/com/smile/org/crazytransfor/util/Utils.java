@@ -4,11 +4,11 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.hardware.input.InputManager;
 import android.os.Build;
-import android.util.Log;
 import android.view.InputDevice;
 import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 
+import com.smile.org.crazytransfor.module.log.L;
 import com.smile.org.crazytransfor.service.RemoteTransforService;
 
 import java.io.BufferedReader;
@@ -31,6 +31,7 @@ public class Utils {
     public final static String COMMAND_SH       = "sh";
     public final static String COMMAND_EXIT     = "exit\n";
     public final static String COMMAND_LINE_END = "\n";
+    private static volatile ThreadLocal<StringBuilder> threadSafeStrBuilder;
     public static <T> boolean isEmpty(List<T> list){
         if(list == null || list.isEmpty()){
             return true;
@@ -99,12 +100,12 @@ public class Utils {
             while ((s = errorResult.readLine()) != null) errorMsg.append(s);
             commandResult.successMsg = successMsg.toString();
             commandResult.errorMsg = errorMsg.toString();
-            Log.i(TAG, commandResult.result + " | " + commandResult.successMsg
+            L.i( commandResult.result + " | " + commandResult.successMsg
                     + " | " + commandResult.errorMsg);
         } catch (IOException e) {
-            Log.e(TAG, "e.getMessage() = " + e.getMessage() + ",e = " + e);
+            L.e( "e.getMessage() = " + e.getMessage() + ",e = " + e);
         } catch (Exception e) {
-            Log.e(TAG, "e.getMessage() = " + e.getMessage() + ",e = " + e);
+            L.e( "e.getMessage() = " + e.getMessage() + ",e = " + e);
         } finally {
             try {
                 if (os != null) os.close();
@@ -113,7 +114,7 @@ public class Utils {
             } catch (IOException e) {
                 String errmsg = e.getMessage();
                 if (errmsg != null) {
-                    Log.e(TAG, errmsg);
+                    L.e( errmsg);
                 } else {
                     e.printStackTrace();
                 }
@@ -159,6 +160,29 @@ public class Utils {
             info.topActivityName = localRunningTaskInfo.topActivity.getClassName();
         }
         return info;
+    }
+
+    /**
+     * 获取线程安全的StringBuilder
+     **/
+    public static StringBuilder getThreadSafeStringBuilder() {
+        if (threadSafeStrBuilder == null) {
+            synchronized (Utils.class) {
+                if (threadSafeStrBuilder == null) {
+                    threadSafeStrBuilder = new ThreadLocal<StringBuilder>();
+                }
+            }
+        }
+
+        StringBuilder sb = threadSafeStrBuilder.get();
+
+        if (sb == null) {
+            sb = new StringBuilder();
+            threadSafeStrBuilder.set(sb);
+        }
+
+        sb.delete(0, sb.length());
+        return sb;
     }
 
 }

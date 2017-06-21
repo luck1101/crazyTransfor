@@ -4,6 +4,9 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.smile.org.crazytransfor.MainActivity;
+import com.smile.org.crazytransfor.MyApplication;
+
 /**
  * Created by Smile on 2017/5/31.
  */
@@ -13,9 +16,9 @@ public class SharePreferenceUtil {
     public static SharePreferenceUtil mInstance = null;
     SharedPreferences mSharedPreferences;
     public static int DEFAULT_INT = 0;
-    public static SharePreferenceUtil getInstance(Context c){
+    public static SharePreferenceUtil getInstance(){
         if(mInstance == null){
-            mInstance = new SharePreferenceUtil(c);
+            mInstance = new SharePreferenceUtil(MyApplication.getInstance());
         }
         return mInstance;
     }

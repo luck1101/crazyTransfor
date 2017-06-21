@@ -5,7 +5,8 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Environment;
-import android.util.Log;
+
+import com.smile.org.crazytransfor.module.log.L;
 
 import java.io.File;
 import java.util.HashMap;
@@ -66,7 +67,7 @@ public class DataHelper {
         HashMap<String,PointData> pointList = new HashMap<>();
         Cursor cursor = db.query(SqliteHelper. TB_NAME, null, null , null, null, null, null);
         cursor.moveToFirst();
-        Log.d(TAG,"GetCoodinateList table count =  " + cursor.getCount());
+        L.d( "GetCoodinateList table count =  " + cursor.getCount());
         while (!cursor.isAfterLast()) {
             PointData pointData = new PointData();
             pointData.key = cursor.getString(1);
@@ -86,14 +87,14 @@ public class DataHelper {
         values.put(PointData.KEY_X, data.x);
         values.put(PointData.KEY_Y, data.y);
         Long row = db.insert(SqliteHelper. TB_NAME, null, values);
-        Log.d(TAG, "SaveUserInfo row = " + row);
+        L.d(  "SaveUserInfo row = " + row);
         return row;
     }
 
     // 删除users表的记录
     public int delCoodinate() {
         int id = db.delete(SqliteHelper.TB_NAME, null,null);
-        Log.d(TAG, id + "");
+        L.d(  id + "");
         return id;
     }
 }

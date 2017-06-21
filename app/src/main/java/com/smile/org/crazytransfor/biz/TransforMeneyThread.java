@@ -2,10 +2,10 @@ package com.smile.org.crazytransfor.biz;
 
 import android.content.Context;
 import android.os.Handler;
-import android.util.Log;
 
 import com.smile.org.crazytransfor.model.PointData;
 import com.smile.org.crazytransfor.model.SharePreferenceUtil;
+import com.smile.org.crazytransfor.module.log.L;
 import com.smile.org.crazytransfor.service.RemoteTransforService;
 import com.smile.org.crazytransfor.util.Utils;
 
@@ -125,13 +125,13 @@ public class TransforMeneyThread extends Thread {
         while (!isClose && !isInterrupted()) {
             if (myPhones.size() > 0 && !isPause) {
                 String phone = myPhones.get(0);
-                Log.d(TAG,"run phone = " + phone);
+                L.d("run phone = " + phone);
                 handler.sendEmptyMessage(RemoteTransforService.MSG_REQUEST_UPDATE_VIEW);
                 circleTransfor(phone);
                 synchronized (myPhones) {
                     myPhones.remove(0);
                 }
-                SharePreferenceUtil.getInstance(mContext).autoAdd(SharePreferenceUtil.KEY_POSITION);
+                SharePreferenceUtil.getInstance().autoAdd(SharePreferenceUtil.KEY_POSITION);
                 Utils.sleep(100);
             }else {
                 if(myPhones == null || myPhones.size() == 0){
@@ -139,7 +139,7 @@ public class TransforMeneyThread extends Thread {
                     onStopThread();
                     return;
                 }
-                Log.d(TAG,"onThreadWait");
+                L.d("onThreadWait");
                 onThreadWait();
             }
         }
@@ -174,17 +174,17 @@ public class TransforMeneyThread extends Thread {
      */
     private void circleTransfor(String phone){
         try {
-            Log.d(TAG,"start");
+            L.d("start");
             int x = 0,y = 0;
             if(waitForActivity(ZFB_MAIN,6)){
                 //点击1：首页
                 Thread.currentThread().sleep(800);
                 x = myPoint.get(RemoteTransforService.KEY_1).x;
                 y = myPoint.get(RemoteTransforService.KEY_1).y;
-                Log.d(TAG,"tap1 main x = " + x + ",y = " + y);
+                L.d("tap1 main x = " + x + ",y = " + y);
                 Utils.execCommand("input tap " + x + " " + y,true);
             }else{
-                Log.e(TAG,"1 not ZFB_MAIN");
+                L.e("1 not ZFB_MAIN");
             }
 
             if(waitForActivity(ZFB_MAIN,6)){
@@ -192,10 +192,10 @@ public class TransforMeneyThread extends Thread {
                 Thread.currentThread().sleep(800);
                 x = myPoint.get(RemoteTransforService.KEY_2).x;
                 y = myPoint.get(RemoteTransforService.KEY_2).y;
-                Log.d(TAG,"tap2 + x = " + x + ",y = " + y);
+                L.d("tap2 + x = " + x + ",y = " + y);
                 Utils.execCommand("input tap " + x + " " + y,true);
             }else{
-                Log.e(TAG,"2 not ZFB_MAIN");
+                L.e("2 not ZFB_MAIN");
             }
 
             if(waitForActivity(ZFB_MAIN,6)){
@@ -203,10 +203,10 @@ public class TransforMeneyThread extends Thread {
                 Thread.currentThread().sleep(800);
                 x = myPoint.get(RemoteTransforService.KEY_3).x;
                 y = myPoint.get(RemoteTransforService.KEY_3).y;
-                Log.d(TAG,"tap3 add friend x = " + x + ",y = " + y);
+                L.d("tap3 add friend x = " + x + ",y = " + y);
                 Utils.execCommand("input tap " + x + " " + y,true);
             }else{
-                Log.e(TAG,"3 not ZFB_MAIN");
+                L.e("3 not ZFB_MAIN");
             }
 
             if(waitForActivity(ZFB_ADD_FRIEND,6)){
@@ -214,16 +214,16 @@ public class TransforMeneyThread extends Thread {
                 Thread.currentThread().sleep(800);
                 x = myPoint.get(RemoteTransforService.KEY_4).x;
                 y = myPoint.get(RemoteTransforService.KEY_4).y;
-                Log.d(TAG,"tap4 input phone x = " + x + ",y = " + y);
+                L.d("tap4 input phone x = " + x + ",y = " + y);
                 Utils.execCommand("input tap " + x + " " + y,true);
                 Thread.currentThread().sleep(1000);
                 //输入号码
-                Log.d(TAG,"input text " + phone);
+                L.d("input text " + phone);
                 Utils.execCommand("input text " + phone,true);
                 Thread.currentThread().sleep(800);
                 Utils.execCommand("input keyevent 66 ",true);
             }else{
-                Log.e(TAG,"4 not ZFB_ADD_FRIEND");
+                L.e( "4 not ZFB_ADD_FRIEND");
             }
 
             if(waitForActivity(ZFB_FRIEND,6)) {
@@ -231,10 +231,10 @@ public class TransforMeneyThread extends Thread {
                 Thread.currentThread().sleep(2000);
                 x = myPoint.get(RemoteTransforService.KEY_5).x;
                 y = myPoint.get(RemoteTransforService.KEY_5).y;
-                Log.d(TAG,"tap5 transfor x = " + x + ",y = " + y);
+                L.d( "tap5 transfor x = " + x + ",y = " + y);
                 Utils.execCommand("input tap " + x + " " + y,true);
             }else{
-                Log.e(TAG,"5 not ZFB_FRIEND,return to ZFB_MAIN");
+                L.e( "5 not ZFB_FRIEND,return to ZFB_MAIN");
                 Thread.currentThread().sleep(1500);
                 Utils.execCommand("input keyevent 4 ",true);
                 Thread.currentThread().sleep(1500);
@@ -249,7 +249,7 @@ public class TransforMeneyThread extends Thread {
                 Thread.currentThread().sleep(2000);
                 x = myPoint.get(RemoteTransforService.KEY_5).x;
                 y = myPoint.get(RemoteTransforService.KEY_5).y + 68;
-                Log.d(TAG,"tap5 transfor x = " + x + ",y = " + y);
+                L.d( "tap5 transfor x = " + x + ",y = " + y);
                 Utils.execCommand("input tap " + x + " " + y,true);
             }
             if(waitForActivity(ZFB_FRIEND,2)) {
@@ -257,43 +257,43 @@ public class TransforMeneyThread extends Thread {
                 Thread.currentThread().sleep(2000);
                 x = myPoint.get(RemoteTransforService.KEY_5).x;
                 y = myPoint.get(RemoteTransforService.KEY_5).y - 68;
-                Log.d(TAG,"tap5 transfor x = " + x + ",y = " + y);
+                L.d( "tap5 transfor x = " + x + ",y = " + y);
                 Utils.execCommand("input tap " + x + " " + y,true);
             }
 
             //判断是否在转账界面
             if(waitForActivity(ZFB_TRANSFOR,6)) {
                 //输入转账金额
-                Log.d(TAG,"input text 0.01");
+                L.d( "input text 0.01");
                 Thread.currentThread().sleep(800);
                 Utils.execCommand("input text " + RemoteTransforService.money,true);
                 Thread.currentThread().sleep(1000);
                 Utils.execCommand("input keyevent 66 ",true);
                 Thread.currentThread().sleep(1000);
                 //输入备注
-                Log.d(TAG,"input text hello");
-                Utils.execCommand("input text " + "hello",true);
-                Thread.currentThread().sleep(1000);
+                //L.d( "input text hello");
+                //Utils.execCommand("input text " + "hello",true);
+                //Thread.currentThread().sleep(1000);
                 Utils.execCommand("input keyevent 4 ",true);
                 Thread.currentThread().sleep(1000);
                 //点击6:确认转账
                 x = myPoint.get(RemoteTransforService.KEY_6).x;
                 y = myPoint.get(RemoteTransforService.KEY_6).y;
-                Log.d(TAG,"tap6 sure transfor x = " + x + ",y = " + y);
+                L.d( "tap6 sure transfor x = " + x + ",y = " + y);
                 Utils.execCommand("input tap " + x + " " + y,true);
                 Thread.currentThread().sleep(3000);
             }else{
-                Log.e(TAG,"6 not ZFB_TRANSFOR");
+                L.e( "6 not ZFB_TRANSFOR");
             }
 
             //确认转账后，弹出输入用户名时，返回到之前的操作
             if(waitForActivity(ZFB_TRANSFOR,6)) {
-                Log.d(TAG,"需要输入用户名，点击取消，返回主页");
+                L.d( "需要输入用户名，点击取消，返回主页");
                 Utils.execCommand("input keyevent 4 ",true);
                 Thread.currentThread().sleep(1000);
                 x = myPoint.get(RemoteTransforService.KEY_USER_NAME).x;
                 y = myPoint.get(RemoteTransforService.KEY_USER_NAME).y;
-                Log.d(TAG,"tap6 sure transfor x = " + x + ",y = " + y);
+                L.d( "tap6 sure transfor x = " + x + ",y = " + y);
                 Utils.execCommand("input tap " + x + " " + y,true);
 
                 Thread.currentThread().sleep(1000);
@@ -308,10 +308,10 @@ public class TransforMeneyThread extends Thread {
 
             //确认转账后，弹出你已经被拉黑
             if(waitForActivity(ZFB_TRANSFOR,6)) {
-                Log.d(TAG,"被拉黑，点击确定，返回主页");
+                L.d( "被拉黑，点击确定，返回主页");
                 x = myPoint.get(RemoteTransforService.KEY_LAHEI).x;
                 y = myPoint.get(RemoteTransforService.KEY_LAHEI).y;
-                Log.d(TAG,"tap6 sure transfor x = " + x + ",y = " + y);
+                L.d( "tap6 sure transfor x = " + x + ",y = " + y);
                 Utils.execCommand("input tap " + x + " " + y,true);
 
                 Thread.currentThread().sleep(1000);
@@ -331,22 +331,22 @@ public class TransforMeneyThread extends Thread {
                 Thread.currentThread().sleep(800);
                 x = myPoint.get(RemoteTransforService.KEY_7).x;
                 y = myPoint.get(RemoteTransforService.KEY_7).y;
-                Log.d(TAG,"tap7 complement x = " + x + ",y = " + y);
+                L.d( "tap7 complement x = " + x + ",y = " + y);
                 Utils.execCommand("input tap " + x + " " + y,true);
             }else{
-                Log.e(TAG,"7 not ZFB_TRANSFOR_SUCCES");
+                L.e( "7 not ZFB_TRANSFOR_SUCCES");
             }
 
             if(waitForActivity(ZFB_ENTER_PERSON,6)){
                 Thread.currentThread().sleep(1500);
                 Utils.execCommand("input keyevent 4 ",true);
-                Log.d(TAG,"end");
+                L.d( "end");
             }else{
-                Log.e(TAG,"8 not ZFB_ENTER_PERSON");
+                L.e( "8 not ZFB_ENTER_PERSON");
             }
 
         }catch (Exception e){
-            Log.e(TAG,"Exception description = " + e.getMessage() + ",e = " + e);
+            L.e( "Exception description = " + e.getMessage() + ",e = " + e);
         }
     }
 
