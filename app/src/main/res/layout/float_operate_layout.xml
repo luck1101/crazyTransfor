@@ -40,12 +40,14 @@
             android:layout_height="wrap_content"
             android:layout_toRightOf="@id/btn_record"
             android:text="@string/str_action_play"
+            android:visibility="gone"
             android:textSize="10sp"/>
         <Button
             android:id="@+id/btn_lahei"
             android:layout_width="60dp"
             android:layout_height="wrap_content"
             android:text="@string/str_action_lahei_err"
+            android:visibility="gone"
             android:textSize="10sp"/>
 
         <Button
@@ -53,6 +55,7 @@
             android:layout_width="60dp"
             android:layout_height="wrap_content"
             android:text="@string/str_action_user_err"
+            android:visibility="gone"
             android:textSize="10sp"/>
 
     </LinearLayout>

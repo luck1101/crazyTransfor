@@ -27,6 +27,7 @@ public class LogFileStatService extends Service {
             startForeground(LogFileStatService.class.hashCode(), new Notification());
         }
         startCollect();
+
     }
 
     @Override
@@ -36,6 +37,7 @@ public class LogFileStatService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        startForeground(startId, new Notification());
         return START_STICKY;
     }
 

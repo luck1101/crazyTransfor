@@ -1,18 +1,23 @@
 package com.smile.org.crazytransfor.model;
 
 import android.app.Activity;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.net.Uri;
 
 import com.smile.org.crazytransfor.MainActivity;
 import com.smile.org.crazytransfor.MyApplication;
+import com.smile.org.crazytransfor.module.log.L;
 
 /**
  * Created by Smile on 2017/5/31.
  */
 
 public class SharePreferenceUtil {
-    public static String KEY_POSITION = "position";
+    /*public static String KEY_POSITION = "position";
     public static SharePreferenceUtil mInstance = null;
     SharedPreferences mSharedPreferences;
     public static int DEFAULT_INT = 0;
@@ -45,5 +50,40 @@ public class SharePreferenceUtil {
         int value = mSharedPreferences.getInt(key,DEFAULT_INT);
         value++;
         save(key,value);
+    }*/
+
+    public static void createCurrentPosition(Context context){
+        ContentResolver resolver = context.getContentResolver();
+        Cursor cursor = resolver.query(Uri.parse("content://com.test.provider/person"), null, null, null, null);
+        if(cursor == null || cursor.getCount() == 0){
+            L.d("createCurrentPosition position == 0");
+            ContentValues values = new ContentValues();
+            values.put("name", "position");
+            values.put("position", 0);
+            Uri uri = resolver.insert(Uri.parse("content://com.test.provider/person"), values);
+            L.d(uri.toString());
+        }else{
+            L.d("createCurrentPosition have data");
+        }
+    }
+
+    public static int queryCurrentPosition(Context context){
+        int position = 0;
+        ContentResolver resolver = context.getContentResolver();
+        Cursor cursor = resolver.query(Uri.parse("content://com.test.provider/person"), null, null, null, null);
+        if(cursor != null && cursor.moveToNext()){
+            position = cursor.getInt(cursor.getColumnIndex("position"));
+        }
+        cursor.close();
+        return position;
+    }
+
+    public static void updateCurrentPosition(Context context,int p){
+        ContentResolver resolver = context.getContentResolver();
+        ContentValues values = new ContentValues();
+        values.put("name", "position");
+        values.put("position",p);
+        int type = resolver.update(Uri.parse("content://com.test.provider/person"), values, null, null);
+        L.d("updateCurrentPosition type = "+type);
     }
 }

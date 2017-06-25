@@ -2,13 +2,17 @@ package com.smile.org.crazytransfor;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -18,6 +22,7 @@ import android.widget.Toast;
 import com.smile.org.crazytransfor.model.SharePreferenceUtil;
 import com.smile.org.crazytransfor.module.log.L;
 import com.smile.org.crazytransfor.service.RemoteTransforService;
+import com.umeng.analytics.MobclickAgent;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -55,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
     void save() {
         // TODO Auto-generated method stub
         if (isStart) {
-            Intent intent = new Intent(MainActivity.this, RemoteTransforService.class);
+            Intent intent = new Intent(getApplicationContext(), RemoteTransforService.class);
             Bundle bundle = new Bundle();
             bundle.putString("action", "save");
             intent.putExtras(bundle);
@@ -70,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
     void clear() {
         // TODO Auto-generated method stub
         if (isStart) {
-            Intent intent = new Intent(MainActivity.this, RemoteTransforService.class);
+            Intent intent = new Intent(getApplicationContext(), RemoteTransforService.class);
             Bundle bundle = new Bundle();
             bundle.putString("action", "clear");
             intent.putExtras(bundle);
@@ -90,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
 
     @OnClick(R.id.btn_stop)
     void stopService() {
-        Intent intent = new Intent(MainActivity.this, RemoteTransforService.class);
+        Intent intent = new Intent(getApplicationContext(), RemoteTransforService.class);
         stopService(intent);
         isStart = false;
     }
@@ -103,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "请输入文件路径", Toast.LENGTH_SHORT).show();
             return;
         }
-        final int currentOffset = SharePreferenceUtil.getInstance().getIntValue(SharePreferenceUtil.KEY_POSITION);
+        final int currentOffset = SharePreferenceUtil.queryCurrentPosition(MainActivity.this);
         L.d( "startFloatWindows() currentOffset = " + currentOffset);
         if (currentOffset > 0) {
             // TODO: 2017/6/2
@@ -120,7 +125,8 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View view) {
                     L.d( "cancel");
-                    SharePreferenceUtil.getInstance().save(SharePreferenceUtil.KEY_POSITION, 0);
+                    //SharePreferenceUtil.getInstance().save(SharePreferenceUtil.KEY_POSITION, 0);
+                    SharePreferenceUtil.updateCurrentPosition(MainActivity.this,0);
                     confirmDialog.dismiss();
                     startRemoteService();
                 }
@@ -134,13 +140,48 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    /*public void createCurrentPosition(){
+        ContentResolver resolver = getContentResolver();
+        Cursor cursor = resolver.query(Uri.parse("content://com.test.provider/person"), null, null, null, null);
+        if(cursor == null || cursor.getCount() == 0){
+            L.d("createCurrentPosition position == 0");
+            ContentValues values = new ContentValues();
+            values.put("name", "position");
+            values.put("position", 0);
+            Uri uri = resolver.insert(Uri.parse("content://com.test.provider/person"), values);
+            L.d(uri.toString());
+        }else{
+            L.d("createCurrentPosition have data");
+        }
+    }
+
+    public int queryCurrentPosition(){
+        int position = 0;
+        ContentResolver resolver = getContentResolver();
+        Cursor cursor = resolver.query(Uri.parse("content://com.test.provider/person"), null, null, null, null);
+        if(cursor != null && cursor.moveToNext()){
+            position = cursor.getInt(cursor.getColumnIndex("position"));
+        }
+        cursor.close();
+        return position;
+    }
+
+    public void updateCurrentPosition(int p){
+        ContentResolver resolver = getContentResolver();
+        ContentValues values = new ContentValues();
+        values.put("name", "position");
+        values.put("position",p);
+        int type = resolver.update(Uri.parse("content://com.test.provider/person"), values, null, null);
+        L.d("updateCurrentPosition type = "+type);
+    }*/
+
     private void startRemoteService() {
         float money = 0.01f;
         if (!TextUtils.isEmpty(edit_transfor_money.getText())) {
             money = Float.valueOf(edit_transfor_money.getText().toString());
         }
         String filepath = edit_file_path.getText().toString();
-        Intent intent = new Intent(MainActivity.this, RemoteTransforService.class);
+        Intent intent = new Intent(getApplicationContext(), RemoteTransforService.class);
         //启动FxService
         Bundle bundle = new Bundle();
         bundle.putString("action", "start");
@@ -157,6 +198,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+        //createCurrentPosition();
+        SharePreferenceUtil.createCurrentPosition(this);
+
         L.d( "isstart = " + isStart);
         L.d( "onCreate()");
     }
@@ -177,7 +221,14 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        MobclickAgent.onResume(this);
         L.d( "onResume()");
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        MobclickAgent.onPause(this);
     }
 
     private String DateToLong(Date time) {

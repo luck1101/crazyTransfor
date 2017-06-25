@@ -2,12 +2,14 @@ package com.smile.org.crazytransfor.biz;
 
 import android.content.Context;
 import android.os.Handler;
+import android.os.Message;
 
 import com.smile.org.crazytransfor.model.PointData;
 import com.smile.org.crazytransfor.model.SharePreferenceUtil;
 import com.smile.org.crazytransfor.module.log.L;
 import com.smile.org.crazytransfor.service.RemoteTransforService;
 import com.smile.org.crazytransfor.util.Utils;
+import com.umeng.analytics.MobclickAgent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,6 +34,7 @@ public class TransforMeneyThread extends Thread {
     public final static int STATE_PLAY = 3;
     public final static int STATE_PAUSE = 4;
     public int state = STATE_INIT;
+    public int position = 0;
 
     private TransforMeneyThread(Context c){
         mContext = c;
@@ -49,13 +52,14 @@ public class TransforMeneyThread extends Thread {
         handler = h;
     }
 
-    public void setPoints(HashMap<String,PointData> points){
+    public void setPoints(HashMap<String,PointData> points,int p){
         synchronized (this){
             if(myPoint != points){
                 myPoint.clear();
                 myPoint = points;
             }
         }
+        position = p;
 
     }
 
@@ -119,6 +123,13 @@ public class TransforMeneyThread extends Thread {
         this.isClose = isClose;
     }
 
+    public void sendMessage(){
+        Message msg = Message.obtain();
+        msg.what = RemoteTransforService.MSG_REQUEST_UPDATE_VIEW;
+        msg.arg1 = position;
+        handler.sendMessage(msg);
+    }
+
     @Override
     public void run() {
         state = STATE_START;
@@ -126,12 +137,15 @@ public class TransforMeneyThread extends Thread {
             if (myPhones.size() > 0 && !isPause) {
                 String phone = myPhones.get(0);
                 L.d("run phone = " + phone);
-                handler.sendEmptyMessage(RemoteTransforService.MSG_REQUEST_UPDATE_VIEW);
+                //handler.sendEmptyMessage(RemoteTransforService.MSG_REQUEST_UPDATE_VIEW);
+                position++;
+                sendMessage();
                 circleTransfor(phone);
                 synchronized (myPhones) {
                     myPhones.remove(0);
                 }
-                SharePreferenceUtil.getInstance().autoAdd(SharePreferenceUtil.KEY_POSITION);
+                SharePreferenceUtil.updateCurrentPosition(mContext,position);
+                //SharePreferenceUtil.getInstance().autoAdd(SharePreferenceUtil.KEY_POSITION);
                 Utils.sleep(100);
             }else {
                 if(myPhones == null || myPhones.size() == 0){
@@ -144,6 +158,8 @@ public class TransforMeneyThread extends Thread {
             }
         }
     }
+
+    public final int TIME_WAIT = 12;//每个节目等待秒数=TIME_WAIT*500ms
 
     public final String ZFB_MAIN = "AlipayLogin";
     public final String ZFB_ADD_FRIEND = "AddFriendActivity_";
@@ -176,9 +192,9 @@ public class TransforMeneyThread extends Thread {
         try {
             L.d("start");
             int x = 0,y = 0;
-            if(waitForActivity(ZFB_MAIN,6)){
+            if(waitForActivity(ZFB_MAIN,TIME_WAIT)){
                 //点击1：首页
-                Thread.currentThread().sleep(800);
+                Thread.currentThread().sleep(300);
                 x = myPoint.get(RemoteTransforService.KEY_1).x;
                 y = myPoint.get(RemoteTransforService.KEY_1).y;
                 L.d("tap1 main x = " + x + ",y = " + y);
@@ -187,9 +203,9 @@ public class TransforMeneyThread extends Thread {
                 L.e("1 not ZFB_MAIN");
             }
 
-            if(waitForActivity(ZFB_MAIN,6)){
+            if(waitForActivity(ZFB_MAIN,TIME_WAIT)){
                 //点击2：+号
-                Thread.currentThread().sleep(800);
+                Thread.currentThread().sleep(500);
                 x = myPoint.get(RemoteTransforService.KEY_2).x;
                 y = myPoint.get(RemoteTransforService.KEY_2).y;
                 L.d("tap2 + x = " + x + ",y = " + y);
@@ -198,9 +214,9 @@ public class TransforMeneyThread extends Thread {
                 L.e("2 not ZFB_MAIN");
             }
 
-            if(waitForActivity(ZFB_MAIN,6)){
+            if(waitForActivity(ZFB_MAIN,TIME_WAIT)){
                 ////点击3：添加好友
-                Thread.currentThread().sleep(800);
+                Thread.currentThread().sleep(500);
                 x = myPoint.get(RemoteTransforService.KEY_3).x;
                 y = myPoint.get(RemoteTransforService.KEY_3).y;
                 L.d("tap3 add friend x = " + x + ",y = " + y);
@@ -209,9 +225,9 @@ public class TransforMeneyThread extends Thread {
                 L.e("3 not ZFB_MAIN");
             }
 
-            if(waitForActivity(ZFB_ADD_FRIEND,6)){
+            if(waitForActivity(ZFB_ADD_FRIEND,TIME_WAIT)){
                 //点击4：输入框
-                Thread.currentThread().sleep(800);
+                Thread.currentThread().sleep(500);
                 x = myPoint.get(RemoteTransforService.KEY_4).x;
                 y = myPoint.get(RemoteTransforService.KEY_4).y;
                 L.d("tap4 input phone x = " + x + ",y = " + y);
@@ -226,9 +242,9 @@ public class TransforMeneyThread extends Thread {
                 L.e( "4 not ZFB_ADD_FRIEND");
             }
 
-            if(waitForActivity(ZFB_FRIEND,6)) {
+            if(waitForActivity(ZFB_FRIEND,TIME_WAIT*2)) {
                 //点击5：转账
-                Thread.currentThread().sleep(2000);
+                Thread.currentThread().sleep(1000);
                 x = myPoint.get(RemoteTransforService.KEY_5).x;
                 y = myPoint.get(RemoteTransforService.KEY_5).y;
                 L.d( "tap5 transfor x = " + x + ",y = " + y);
@@ -244,17 +260,17 @@ public class TransforMeneyThread extends Thread {
                 Thread.currentThread().sleep(1500);
                 return;
             }
-            if(waitForActivity(ZFB_FRIEND,2)) {
+            if(waitForActivity(ZFB_FRIEND,TIME_WAIT)) {
                 //点击5：转账
-                Thread.currentThread().sleep(2000);
+                Thread.currentThread().sleep(1000);
                 x = myPoint.get(RemoteTransforService.KEY_5).x;
                 y = myPoint.get(RemoteTransforService.KEY_5).y + 68;
                 L.d( "tap5 transfor x = " + x + ",y = " + y);
                 Utils.execCommand("input tap " + x + " " + y,true);
             }
-            if(waitForActivity(ZFB_FRIEND,2)) {
+            if(waitForActivity(ZFB_FRIEND,TIME_WAIT)) {
                 //点击5：转账
-                Thread.currentThread().sleep(2000);
+                Thread.currentThread().sleep(1000);
                 x = myPoint.get(RemoteTransforService.KEY_5).x;
                 y = myPoint.get(RemoteTransforService.KEY_5).y - 68;
                 L.d( "tap5 transfor x = " + x + ",y = " + y);
@@ -262,10 +278,10 @@ public class TransforMeneyThread extends Thread {
             }
 
             //判断是否在转账界面
-            if(waitForActivity(ZFB_TRANSFOR,6)) {
+            if(waitForActivity(ZFB_TRANSFOR,TIME_WAIT*2)) {
                 //输入转账金额
                 L.d( "input text 0.01");
-                Thread.currentThread().sleep(800);
+                Thread.currentThread().sleep(500);
                 Utils.execCommand("input text " + RemoteTransforService.money,true);
                 Thread.currentThread().sleep(1000);
                 Utils.execCommand("input keyevent 66 ",true);
@@ -281,13 +297,12 @@ public class TransforMeneyThread extends Thread {
                 y = myPoint.get(RemoteTransforService.KEY_6).y;
                 L.d( "tap6 sure transfor x = " + x + ",y = " + y);
                 Utils.execCommand("input tap " + x + " " + y,true);
-                Thread.currentThread().sleep(3000);
             }else{
                 L.e( "6 not ZFB_TRANSFOR");
             }
 
             //确认转账后，弹出输入用户名时，返回到之前的操作
-            if(waitForActivity(ZFB_TRANSFOR,6)) {
+            if(waitForActivity(ZFB_TRANSFOR,TIME_WAIT)) {
                 L.d( "需要输入用户名，点击取消，返回主页");
                 Utils.execCommand("input keyevent 4 ",true);
                 Thread.currentThread().sleep(1000);
@@ -307,7 +322,7 @@ public class TransforMeneyThread extends Thread {
             }
 
             //确认转账后，弹出你已经被拉黑
-            if(waitForActivity(ZFB_TRANSFOR,6)) {
+            if(waitForActivity(ZFB_TRANSFOR,TIME_WAIT)) {
                 L.d( "被拉黑，点击确定，返回主页");
                 x = myPoint.get(RemoteTransforService.KEY_LAHEI).x;
                 y = myPoint.get(RemoteTransforService.KEY_LAHEI).y;
@@ -326,7 +341,7 @@ public class TransforMeneyThread extends Thread {
             }
 
 
-            if(waitForActivity(ZFB_TRANSFOR_SUCCES,6)){
+            if(waitForActivity(ZFB_TRANSFOR_SUCCES,TIME_WAIT*2)){
                 //点击7:完成
                 Thread.currentThread().sleep(800);
                 x = myPoint.get(RemoteTransforService.KEY_7).x;
@@ -337,7 +352,7 @@ public class TransforMeneyThread extends Thread {
                 L.e( "7 not ZFB_TRANSFOR_SUCCES");
             }
 
-            if(waitForActivity(ZFB_ENTER_PERSON,6)){
+            if(waitForActivity(ZFB_ENTER_PERSON,TIME_WAIT)){
                 Thread.currentThread().sleep(1500);
                 Utils.execCommand("input keyevent 4 ",true);
                 L.d( "end");
@@ -346,6 +361,7 @@ public class TransforMeneyThread extends Thread {
             }
 
         }catch (Exception e){
+            MobclickAgent.reportError(mContext, e.getStackTrace().toString());
             L.e( "Exception description = " + e.getMessage() + ",e = " + e);
         }
     }
