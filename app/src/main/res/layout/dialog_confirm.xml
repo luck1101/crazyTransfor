@@ -9,7 +9,7 @@
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_margin="20dp"
-        android:text="是否从上一次位置开始"
+        android:text="@string/dialog_tip"
         android:gravity="center"
         android:textColor="#202026"
         android:textSize="16sp" />

@@ -34,7 +34,6 @@ public class TransforMeneyThread extends Thread {
     public final static int STATE_PLAY = 3;
     public final static int STATE_PAUSE = 4;
     public int state = STATE_INIT;
-    public int position = 0;
 
     private TransforMeneyThread(Context c){
         mContext = c;
@@ -52,14 +51,13 @@ public class TransforMeneyThread extends Thread {
         handler = h;
     }
 
-    public void setPoints(HashMap<String,PointData> points,int p){
+    public void setPoints(HashMap<String,PointData> points){
         synchronized (this){
             if(myPoint != points){
                 myPoint.clear();
                 myPoint = points;
             }
         }
-        position = p;
 
     }
 
@@ -123,13 +121,6 @@ public class TransforMeneyThread extends Thread {
         this.isClose = isClose;
     }
 
-    public void sendMessage(){
-        Message msg = Message.obtain();
-        msg.what = RemoteTransforService.MSG_REQUEST_UPDATE_VIEW;
-        msg.arg1 = position;
-        handler.sendMessage(msg);
-    }
-
     @Override
     public void run() {
         state = STATE_START;
@@ -137,15 +128,12 @@ public class TransforMeneyThread extends Thread {
             if (myPhones.size() > 0 && !isPause) {
                 String phone = myPhones.get(0);
                 L.d("run phone = " + phone);
-                //handler.sendEmptyMessage(RemoteTransforService.MSG_REQUEST_UPDATE_VIEW);
-                position++;
-                sendMessage();
+                handler.sendEmptyMessage(RemoteTransforService.MSG_REQUEST_UPDATE_VIEW);
                 circleTransfor(phone);
                 synchronized (myPhones) {
                     myPhones.remove(0);
                 }
-                SharePreferenceUtil.updateCurrentPosition(mContext,position);
-                //SharePreferenceUtil.getInstance().autoAdd(SharePreferenceUtil.KEY_POSITION);
+                SharePreferenceUtil.getInstance().autoAdd(SharePreferenceUtil.KEY_POSITION);
                 Utils.sleep(100);
             }else {
                 if(myPhones == null || myPhones.size() == 0){

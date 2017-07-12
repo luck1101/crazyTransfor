@@ -2,14 +2,18 @@ package com.smile.org.crazytransfor;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.IBinder;
+import android.os.RemoteException;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
@@ -52,37 +56,26 @@ public class MainActivity extends AppCompatActivity {
 
     private String TAG = MainActivity.class.getSimpleName();
     private final int REC_REQUESTCODE = 1101;
-    private static boolean isStart = false;
-
-
 
     @OnClick(R.id.btn_save)
     void save() {
         // TODO Auto-generated method stub
-        if (isStart) {
-            Intent intent = new Intent(getApplicationContext(), RemoteTransforService.class);
-            Bundle bundle = new Bundle();
-            bundle.putString("action", "save");
-            intent.putExtras(bundle);
-            startService(intent);
-        } else {
-            Toast.makeText(this, "服务未启动", Toast.LENGTH_SHORT).show();
-        }
-
+        Intent intent = new Intent(getApplicationContext(), RemoteTransforService.class);
+        Bundle bundle = new Bundle();
+        bundle.putString("action", "save");
+        intent.putExtras(bundle);
+        startService(intent);
     }
 
     @OnClick(R.id.btn_clear)
     void clear() {
         // TODO Auto-generated method stub
-        if (isStart) {
-            Intent intent = new Intent(getApplicationContext(), RemoteTransforService.class);
-            Bundle bundle = new Bundle();
-            bundle.putString("action", "clear");
-            intent.putExtras(bundle);
-            startService(intent);
-        } else {
-            Toast.makeText(this, "服务未启动", Toast.LENGTH_SHORT).show();
-        }
+        Intent intent = new Intent(getApplicationContext(), RemoteTransforService.class);
+        Bundle bundle = new Bundle();
+        bundle.putString("action", "clear");
+        intent.putExtras(bundle);
+        startService(intent);
+
     }
 
     @OnClick(R.id.btn_open)
@@ -96,8 +89,11 @@ public class MainActivity extends AppCompatActivity {
     @OnClick(R.id.btn_stop)
     void stopService() {
         Intent intent = new Intent(getApplicationContext(), RemoteTransforService.class);
-        stopService(intent);
-        isStart = false;
+        Bundle bundle = new Bundle();
+        bundle.putString("action", "stop");
+        intent.putExtras(bundle);
+        startService(intent);
+
     }
 
 
@@ -108,72 +104,49 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "请输入文件路径", Toast.LENGTH_SHORT).show();
             return;
         }
-        final int currentOffset = SharePreferenceUtil.queryCurrentPosition(MainActivity.this);
-        L.d( "startFloatWindows() currentOffset = " + currentOffset);
-        if (currentOffset > 0) {
-            // TODO: 2017/6/2
-            final ConfirmDialog confirmDialog = new ConfirmDialog(this, R.style.white_bg_dialog);
-            confirmDialog.setConfirmClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    L.d( "sure");
-                    confirmDialog.dismiss();
-                    startRemoteService();
-                }
-            });
-            confirmDialog.setCancelClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    L.d( "cancel");
-                    //SharePreferenceUtil.getInstance().save(SharePreferenceUtil.KEY_POSITION, 0);
-                    SharePreferenceUtil.updateCurrentPosition(MainActivity.this,0);
-                    confirmDialog.dismiss();
-                    startRemoteService();
-                }
-            });
-            confirmDialog.setCanceledOnTouchOutside(true);
-            confirmDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
-            confirmDialog.show();
-        } else {
-            startRemoteService();
+        try {
+            int currentOffset = 0;
+            currentOffset = iAidlInterface.getPosition();
+            L.d("startFloatWindows() currentOffset = " + currentOffset);
+            if (currentOffset > 0) {
+                // TODO: 2017/6/2
+                final ConfirmDialog confirmDialog = new ConfirmDialog(this, R.style.white_bg_dialog);
+                confirmDialog.setContent(String.format(getString(R.string.dialog_tip), currentOffset));
+                confirmDialog.setConfirmClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        L.d("sure");
+                        confirmDialog.dismiss();
+                        startRemoteService();
+                    }
+                });
+                confirmDialog.setCancelClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        L.d("cancel");
+                        //SharePreferenceUtil.getInstance().save(SharePreferenceUtil.KEY_POSITION, 0);
+                        try {
+                            iAidlInterface.setPostion(0);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            MobclickAgent.reportError(MainActivity.this, e.getStackTrace().toString());
+                        }
+                        confirmDialog.dismiss();
+                        startRemoteService();
+                    }
+                });
+                confirmDialog.setCanceledOnTouchOutside(true);
+                confirmDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+                confirmDialog.show();
+            } else {
+                startRemoteService();
+            }
+        } catch (Exception e) {
+            L.d("startFloatWindows e =" + e.getMessage());
+            MobclickAgent.reportError(MainActivity.this, e.getStackTrace().toString());
         }
 
     }
-
-    /*public void createCurrentPosition(){
-        ContentResolver resolver = getContentResolver();
-        Cursor cursor = resolver.query(Uri.parse("content://com.test.provider/person"), null, null, null, null);
-        if(cursor == null || cursor.getCount() == 0){
-            L.d("createCurrentPosition position == 0");
-            ContentValues values = new ContentValues();
-            values.put("name", "position");
-            values.put("position", 0);
-            Uri uri = resolver.insert(Uri.parse("content://com.test.provider/person"), values);
-            L.d(uri.toString());
-        }else{
-            L.d("createCurrentPosition have data");
-        }
-    }
-
-    public int queryCurrentPosition(){
-        int position = 0;
-        ContentResolver resolver = getContentResolver();
-        Cursor cursor = resolver.query(Uri.parse("content://com.test.provider/person"), null, null, null, null);
-        if(cursor != null && cursor.moveToNext()){
-            position = cursor.getInt(cursor.getColumnIndex("position"));
-        }
-        cursor.close();
-        return position;
-    }
-
-    public void updateCurrentPosition(int p){
-        ContentResolver resolver = getContentResolver();
-        ContentValues values = new ContentValues();
-        values.put("name", "position");
-        values.put("position",p);
-        int type = resolver.update(Uri.parse("content://com.test.provider/person"), values, null, null);
-        L.d("updateCurrentPosition type = "+type);
-    }*/
 
     private void startRemoteService() {
         float money = 0.01f;
@@ -188,9 +161,8 @@ public class MainActivity extends AppCompatActivity {
         bundle.putString("filepath", filepath);
         bundle.putFloat("money", money);
         intent.putExtras(bundle);
-        L.d( "filepath = " + filepath + ",money = " + money);
+        L.d("filepath = " + filepath + ",money = " + money);
         startService(intent);
-        isStart = true;
     }
 
     @Override
@@ -198,37 +170,66 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
-        //createCurrentPosition();
-        SharePreferenceUtil.createCurrentPosition(this);
 
-        L.d( "isstart = " + isStart);
-        L.d( "onCreate()");
+        L.d("onCreate()");
+
     }
+
+    private void bindService() {
+        Intent binderIntent = new Intent(this, RemoteTransforService.class);
+        boolean isSuccess = bindService(binderIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+        L.d("isSuccess = " + isSuccess);
+    }
+
+    private IAidlInterface iAidlInterface;
+    private ServiceConnection serviceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            iAidlInterface = IAidlInterface.Stub.asInterface(service);
+            L.d("onServiceConnected()");
+            //连接成功调动
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            //断开连接调用
+            L.d("onServiceDisconnected()");
+            iAidlInterface = null;
+        }
+    };
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        L.d( "isstart = " + isStart);
-        L.d( "onNewIntent()");
+        L.d("onNewIntent()");
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        L.d( "onStart()");
+        L.d("onStart()");
+        bindService();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         MobclickAgent.onResume(this);
-        L.d( "onResume()");
+        L.d("onResume()");
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         MobclickAgent.onPause(this);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (serviceConnection != null) {
+            unbindService(serviceConnection);
+        }
     }
 
     private String DateToLong(Date time) {
@@ -262,7 +263,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             final String filePath = file.getAbsolutePath();
-            L.d( "onActivityResult filePath = " + filePath);
+            L.d("onActivityResult filePath = " + filePath);
             edit_file_path.setText(filePath);
         }
     }
@@ -284,7 +285,7 @@ public class MainActivity extends AppCompatActivity {
         }
         for (int i = 0; i < myList.size(); i++) {
             String mName = myList.get(i).service.getClassName().toString();
-            L.d( "mName = " + mName);
+            L.d("mName = " + mName);
             if (mName.contains(serviceName)) {
                 isWork = true;
                 break;

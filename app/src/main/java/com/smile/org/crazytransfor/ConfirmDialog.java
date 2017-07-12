@@ -150,6 +150,10 @@ public class ConfirmDialog extends AlertDialog {
         }
         this.contentResId = contentResId;
     }
+    private int position = 0;
+    public void setTip(int p){
+        position = p;
+    }
 
     public void setContent(String content) {
         if (null != this.content) {

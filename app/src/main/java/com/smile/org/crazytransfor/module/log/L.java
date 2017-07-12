@@ -18,13 +18,6 @@ import java.io.Writer;
 public class L {
 
     private final static ThreadLocal<StringBuilder> threadSafeStrBuilder = new ThreadLocal<StringBuilder>();
-
-    // webview打log的各种等级
-    private static final int WEB_LEVEL_DEBUG = MessageLevel.DEBUG.ordinal();
-    private static final int WEB_LEVEL_LOG = MessageLevel.LOG.ordinal();
-    private static final int WEB_LEVEL_TIP = MessageLevel.TIP.ordinal();
-    private static final int WEB_LEVEL_WARNING = MessageLevel.WARNING.ordinal();
-    private static final int WEB_LEVEL_ERROR = MessageLevel.ERROR.ordinal();
     
     public static void d(String message, Object...args) {
         boolean canPrint = true;

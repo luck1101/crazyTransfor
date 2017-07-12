@@ -18,4 +18,5 @@
     <string name="str_action_lahei_err">录确认</string>
     <string name="str_action_user_err">录取消</string>
     <string name="str_action_point_invalid">点数不够，请重新录制</string>
+    <string name="dialog_tip">上一次转账到第%1$d个人，是否从这个位置继续开始？</string>
 </resources>

@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.Gravity;
@@ -24,6 +25,8 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.smile.org.crazytransfor.ConfirmDialog;
+import com.smile.org.crazytransfor.MainActivity;
 import com.smile.org.crazytransfor.R;
 import com.smile.org.crazytransfor.biz.TransforMeneyThread;
 import com.smile.org.crazytransfor.model.DataHelper;
@@ -40,6 +43,7 @@ import java.util.HashMap;
 
 import jxl.Sheet;
 import jxl.Workbook;
+import com.smile.org.crazytransfor.IAidlInterface;
 
 
 /**
@@ -47,6 +51,7 @@ import jxl.Workbook;
  */
 
 public class RemoteTransforService extends Service {
+    //logcat -v time | grep -i -E "RemoteTransforService | MainActivity"
     private String TAG = RemoteTransforService.class.getSimpleName();
     //定义浮动窗口布局
     RelativeLayout mFloatLayout;
@@ -72,14 +77,13 @@ public class RemoteTransforService extends Service {
         myHandler = new MyHandler();
         mWindowManager = (WindowManager)getApplication().getSystemService(getApplication().WINDOW_SERVICE);
         mDataHelper = new DataHelper(mContext);
-        createFloatView();
+
     }
 
     public String filePath;
     public static float money = 0.01f;
     public static int COUNT = 1000;
     private PendingIntent pintent;
-    private int position = 0;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -93,12 +97,14 @@ public class RemoteTransforService extends Service {
             String action = bundle.getString("action");
             L.d("action = " + action);
             if ("start".equals(action)){
+                if(mFloatLayout == null){
+                    createFloatView();
+                }
                 filePath = bundle.getString("filepath");
                 money = bundle.getFloat("money",0.01f);
-                //int currentOffset = SharePreferenceUtil.getInstance().getIntValue(SharePreferenceUtil.KEY_POSITION);
-                position = SharePreferenceUtil.queryCurrentPosition(this);
-                L.d("filePath = " + filePath + ",money = " + money + ",position = " + position);
-                new Thread(new ReadExcelRunnble(filePath,position,COUNT)).start();
+                int currentOffset = SharePreferenceUtil.getInstance().getIntValue(SharePreferenceUtil.KEY_POSITION);
+                L.d("filePath = " + filePath + ",money = " + money + ",currentOffset = " + currentOffset);
+                new Thread(new ReadExcelRunnble(filePath,currentOffset,COUNT)).start();
             }else if ("save".equals(action)){
                 if (coordinatePoints != null && coordinatePoints.size() != 0){
                     L.d("save coordinatePoints");
@@ -109,6 +115,8 @@ public class RemoteTransforService extends Service {
             }else if ("clear".equals(action)){
                 L.d("clear coordinatePoints");
                 mDataHelper.delCoodinate();
+            }else if("stop".equals(action)){
+                hideViews();
             }
         }
         startForeground(startId, new Notification());
@@ -223,6 +231,16 @@ public class RemoteTransforService extends Service {
             //移除悬浮窗口
             mWindowManager.removeView(mFloatLayout1);
         }
+        mFloatLayout1 = null;
+    }
+
+    private void hideViews(){
+        removeCursor();
+        if(mFloatLayout != null){
+            //移除悬浮窗口
+            mWindowManager.removeView(mFloatLayout);
+        }
+        mFloatLayout = null;
     }
 
     private PointData getCursorViewCoordinate(){
@@ -328,7 +346,7 @@ public class RemoteTransforService extends Service {
                     mLaheiBtn.setVisibility(View.GONE);
                     isStarting = !isStarting;
                     if(isStarting){
-                        TransforMeneyThread.getInstance(mContext).setPoints(coordinatePoints,position);
+                        TransforMeneyThread.getInstance(mContext).setPoints(coordinatePoints);
                         TransforMeneyThread.getInstance(mContext).setHandler(myHandler);
                         TransforMeneyThread.getInstance(mContext).setPhones(peoplePhones);
                         TransforMeneyThread.getInstance(mContext).start();
@@ -374,20 +392,46 @@ public class RemoteTransforService extends Service {
                 if(isRecording){
                     createCursorView();
                     Toast.makeText(RemoteTransforService.this, "record", Toast.LENGTH_SHORT).show();
-                    mRecordBtn.setText(R.string.str_action_stop);
+                    mRecordBtn.setText("保存");
                     coordinatePoints.clear();
                     mStartBtn.setText("+");
                     mPlayBtn.setVisibility(View.GONE);
                     mUserErrBtn.setVisibility(View.VISIBLE);
                     mLaheiBtn.setVisibility(View.VISIBLE);
                 }else{
-                    Toast.makeText(RemoteTransforService.this, "stop", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(RemoteTransforService.this, "save", Toast.LENGTH_SHORT).show();
                     mRecordBtn.setText(R.string.str_action_record);
                     mStartBtn.setText(R.string.str_action_start);
                     removeCursor();
                     mPlayBtn.setVisibility(View.GONE);
                     mUserErrBtn.setVisibility(View.GONE);
                     mLaheiBtn.setVisibility(View.GONE);
+
+                    final ConfirmDialog confirmDialog = new ConfirmDialog(mContext, R.style.white_bg_dialog);
+                    confirmDialog.setContent("保存现在录制的位置，点击确定后，之前的数据会被删除");
+                    confirmDialog.setConfirmClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            L.d("sure");
+                            if (coordinatePoints != null && coordinatePoints.size() != 0){
+                                L.d("save coordinatePoints");
+                                for (String key : coordinatePoints.keySet()){
+                                    mDataHelper.saveCoodinate(coordinatePoints.get(key));
+                                }
+                            }
+                            confirmDialog.dismiss();
+                        }
+                    });
+                    confirmDialog.setCancelClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            L.d("cancel");
+                            confirmDialog.dismiss();
+                        }
+                    });
+                    confirmDialog.setCanceledOnTouchOutside(true);
+                    confirmDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+                    confirmDialog.show();
                 }
             }
         });
@@ -448,8 +492,7 @@ public class RemoteTransforService extends Service {
                 case MSG_REQUEST_DATA:
                     TransforMeneyThread.getInstance(mContext).onStopThread();
                     Toast.makeText(RemoteTransforService.this, "一批号码转账完毕，读取下一批号码", Toast.LENGTH_SHORT).show();
-                    //int position = SharePreferenceUtil.getInstance().getIntValue(SharePreferenceUtil.KEY_POSITION);
-                    int position = SharePreferenceUtil.queryCurrentPosition(mContext);
+                    int position = SharePreferenceUtil.getInstance().getIntValue(SharePreferenceUtil.KEY_POSITION);
                     new Thread(new ReadExcelRunnble(filePath,position,COUNT)).start();
                     break;
                 case MSG_DATA_SUCCESS:
@@ -463,8 +506,7 @@ public class RemoteTransforService extends Service {
                         peoplePhones.addAll(phones);
                         Toast.makeText(RemoteTransforService.this, "新读取到" + phones.size() + "条新数据，开始转账", Toast.LENGTH_SHORT).show();
                         if(isStarting){
-                            int p = SharePreferenceUtil.queryCurrentPosition(mContext);
-                            TransforMeneyThread.getInstance(mContext).setPoints(coordinatePoints,p);
+                            TransforMeneyThread.getInstance(mContext).setPoints(coordinatePoints);
                             TransforMeneyThread.getInstance(mContext).setHandler(myHandler);
                             TransforMeneyThread.getInstance(mContext).setPhones(peoplePhones);
                             TransforMeneyThread.getInstance(mContext).start();
@@ -476,8 +518,7 @@ public class RemoteTransforService extends Service {
                     stopSelf();
                     break;
                 case MSG_REQUEST_UPDATE_VIEW:
-                    //int position2 = SharePreferenceUtil.getInstance().getIntValue(SharePreferenceUtil.KEY_POSITION)+1;
-                    int position2 = msg.arg1;
+                    int position2 = SharePreferenceUtil.getInstance().getIntValue(SharePreferenceUtil.KEY_POSITION)+1;
                     mCount.setText(Integer.toString(position2));
                     break;
                 default:
@@ -511,6 +552,27 @@ public class RemoteTransforService extends Service {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
+        return new MyBinder();
     }
+
+    class MyBinder extends IAidlInterface.Stub{
+        @Override
+        public int getPosition() throws RemoteException {
+            return SharePreferenceUtil.getInstance().getIntValue(SharePreferenceUtil.KEY_POSITION);
+        }
+
+        @Override
+        public void setPostion(int p) throws RemoteException {
+            L.d("setPostion() p = " + p);
+            SharePreferenceUtil.getInstance().save(SharePreferenceUtil.KEY_POSITION,p);
+        }
+
+        @Override
+        public IBinder asBinder() {
+            return null;
+        }
+    }
+
+
+
 }
