@@ -182,7 +182,7 @@ public class TransforMeneyThread extends Thread {
             int x = 0,y = 0;
             if(waitForActivity(ZFB_MAIN,TIME_WAIT)){
                 //点击1：首页
-                Thread.currentThread().sleep(300);
+                Thread.currentThread().sleep(100);
                 x = myPoint.get(RemoteTransforService.KEY_1).x;
                 y = myPoint.get(RemoteTransforService.KEY_1).y;
                 L.d("tap1 main x = " + x + ",y = " + y);
@@ -193,7 +193,7 @@ public class TransforMeneyThread extends Thread {
 
             if(waitForActivity(ZFB_MAIN,TIME_WAIT)){
                 //点击2：+号
-                Thread.currentThread().sleep(500);
+                Thread.currentThread().sleep(100);
                 x = myPoint.get(RemoteTransforService.KEY_2).x;
                 y = myPoint.get(RemoteTransforService.KEY_2).y;
                 L.d("tap2 + x = " + x + ",y = " + y);
@@ -215,7 +215,7 @@ public class TransforMeneyThread extends Thread {
 
             if(waitForActivity(ZFB_ADD_FRIEND,TIME_WAIT)){
                 //点击4：输入框
-                Thread.currentThread().sleep(500);
+                Thread.currentThread().sleep(100);
                 x = myPoint.get(RemoteTransforService.KEY_4).x;
                 y = myPoint.get(RemoteTransforService.KEY_4).y;
                 L.d("tap4 input phone x = " + x + ",y = " + y);
@@ -224,130 +224,142 @@ public class TransforMeneyThread extends Thread {
                 //输入号码
                 L.d("input text " + phone);
                 Utils.execCommand("input text " + phone,true);
-                Thread.currentThread().sleep(800);
+                Thread.currentThread().sleep(200);
                 Utils.execCommand("input keyevent 66 ",true);
             }else{
                 L.e( "4 not ZFB_ADD_FRIEND");
+                returnMain();
+                return;
             }
 
-            if(waitForActivity(ZFB_FRIEND,TIME_WAIT*2)) {
+            if(waitForActivity(ZFB_FRIEND,TIME_WAIT)) {
                 //点击5：转账
-                Thread.currentThread().sleep(1000);
+                Thread.currentThread().sleep(500);
                 x = myPoint.get(RemoteTransforService.KEY_5).x;
                 y = myPoint.get(RemoteTransforService.KEY_5).y;
-                L.d( "tap5 transfor x = " + x + ",y = " + y);
+                L.d( "tap5 offset is 0, transfor x = " + x + ",y = " + y);
                 Utils.execCommand("input tap " + x + " " + y,true);
             }else{
                 L.e( "5 not ZFB_FRIEND,return to ZFB_MAIN");
-                Thread.currentThread().sleep(1500);
-                Utils.execCommand("input keyevent 4 ",true);
-                Thread.currentThread().sleep(1500);
-                Utils.execCommand("input keyevent 4 ",true);
-                Thread.currentThread().sleep(1500);
-                Utils.execCommand("input keyevent 4 ",true);
-                Thread.currentThread().sleep(1500);
+                returnMain();
                 return;
             }
-            if(waitForActivity(ZFB_FRIEND,TIME_WAIT)) {
+            if(waitForActivity(ZFB_FRIEND,2)) {
                 //点击5：转账
-                Thread.currentThread().sleep(1000);
                 x = myPoint.get(RemoteTransforService.KEY_5).x;
                 y = myPoint.get(RemoteTransforService.KEY_5).y + 68;
-                L.d( "tap5 transfor x = " + x + ",y = " + y);
+                L.d( "tap5 offset is +68,transfor x = " + x + ",y = " + y);
                 Utils.execCommand("input tap " + x + " " + y,true);
             }
-            if(waitForActivity(ZFB_FRIEND,TIME_WAIT)) {
+            if(waitForActivity(ZFB_FRIEND,2)) {
                 //点击5：转账
-                Thread.currentThread().sleep(1000);
                 x = myPoint.get(RemoteTransforService.KEY_5).x;
                 y = myPoint.get(RemoteTransforService.KEY_5).y - 68;
-                L.d( "tap5 transfor x = " + x + ",y = " + y);
+                L.d( "tap5 offset is -68,transfor x = " + x + ",y = " + y);
                 Utils.execCommand("input tap " + x + " " + y,true);
             }
 
             //判断是否在转账界面
-            if(waitForActivity(ZFB_TRANSFOR,TIME_WAIT*2)) {
+            if(waitForActivity(ZFB_TRANSFOR,TIME_WAIT+2)) {
                 //输入转账金额
                 L.d( "input text 0.01");
-                Thread.currentThread().sleep(500);
+                Thread.currentThread().sleep(300);
                 Utils.execCommand("input text " + RemoteTransforService.money,true);
-                Thread.currentThread().sleep(1000);
+                Thread.currentThread().sleep(100);
                 Utils.execCommand("input keyevent 66 ",true);
-                Thread.currentThread().sleep(1000);
+                Thread.currentThread().sleep(500);
                 //输入备注
                 //L.d( "input text hello");
                 //Utils.execCommand("input text " + "hello",true);
                 //Thread.currentThread().sleep(1000);
                 Utils.execCommand("input keyevent 4 ",true);
-                Thread.currentThread().sleep(1000);
+                Thread.currentThread().sleep(800);
                 //点击6:确认转账
                 x = myPoint.get(RemoteTransforService.KEY_6).x;
                 y = myPoint.get(RemoteTransforService.KEY_6).y;
                 L.d( "tap6 sure transfor x = " + x + ",y = " + y);
                 Utils.execCommand("input tap " + x + " " + y,true);
+                Thread.currentThread().sleep(2000);
             }else{
                 L.e( "6 not ZFB_TRANSFOR");
-            }
-
-            //确认转账后，弹出输入用户名时，返回到之前的操作
-            if(waitForActivity(ZFB_TRANSFOR,TIME_WAIT)) {
-                L.d( "需要输入用户名，点击取消，返回主页");
-                Utils.execCommand("input keyevent 4 ",true);
-                Thread.currentThread().sleep(1000);
-                x = myPoint.get(RemoteTransforService.KEY_USER_NAME).x;
-                y = myPoint.get(RemoteTransforService.KEY_USER_NAME).y;
-                L.d( "tap6 sure transfor x = " + x + ",y = " + y);
-                Utils.execCommand("input tap " + x + " " + y,true);
-
-                Thread.currentThread().sleep(1000);
-                Utils.execCommand("input keyevent 4 ",true);
-                Thread.currentThread().sleep(1000);
-                Utils.execCommand("input keyevent 4 ",true);
-                Thread.currentThread().sleep(1000);
-                Utils.execCommand("input keyevent 4 ",true);
-                Thread.currentThread().sleep(1000);
-                Utils.execCommand("input keyevent 4 ",true);
-            }
-
-            //确认转账后，弹出你已经被拉黑
-            if(waitForActivity(ZFB_TRANSFOR,TIME_WAIT)) {
-                L.d( "被拉黑，点击确定，返回主页");
-                x = myPoint.get(RemoteTransforService.KEY_LAHEI).x;
-                y = myPoint.get(RemoteTransforService.KEY_LAHEI).y;
-                L.d( "tap6 sure transfor x = " + x + ",y = " + y);
-                Utils.execCommand("input tap " + x + " " + y,true);
-
-                Thread.currentThread().sleep(1000);
-                Utils.execCommand("input keyevent 4 ",true);
-                Thread.currentThread().sleep(1000);
-                Utils.execCommand("input keyevent 4 ",true);
-                Thread.currentThread().sleep(1000);
-                Utils.execCommand("input keyevent 4 ",true);
-                Thread.currentThread().sleep(1000);
-                Utils.execCommand("input keyevent 4 ",true);
+                returnMain();
                 return;
             }
 
-
-            if(waitForActivity(ZFB_TRANSFOR_SUCCES,TIME_WAIT*2)){
+            if(waitForActivity(ZFB_TRANSFOR_SUCCES,TIME_WAIT)){
                 //点击7:完成
-                Thread.currentThread().sleep(800);
+                Thread.currentThread().sleep(500);
                 x = myPoint.get(RemoteTransforService.KEY_7).x;
                 y = myPoint.get(RemoteTransforService.KEY_7).y;
                 L.d( "tap7 complement x = " + x + ",y = " + y);
                 Utils.execCommand("input tap " + x + " " + y,true);
             }else{
                 L.e( "7 not ZFB_TRANSFOR_SUCCES");
+                //确认转账后，弹出输入用户名时，返回到之前的操作
+                if(waitForActivity(ZFB_TRANSFOR,2)) {
+                    L.d( "需要输入用户名，点击取消，返回主页");
+                    Utils.execCommand("input keyevent 4 ",true);
+                    Thread.currentThread().sleep(800);
+                    x = myPoint.get(RemoteTransforService.KEY_USER_NAME).x;
+                    y = myPoint.get(RemoteTransforService.KEY_USER_NAME).y;
+                    L.d( "tap6 sure transfor x = " + x + ",y = " + y);
+                    Utils.execCommand("input tap " + x + " " + y,true);
+                    Thread.currentThread().sleep(1000);
+                    returnMain();
+                }
+
+                //确认转账后，弹出你已经被拉黑
+                if(waitForActivity(ZFB_TRANSFOR,2)) {
+                    L.d( "被拉黑，点击确定，返回主页");
+                    x = myPoint.get(RemoteTransforService.KEY_LAHEI).x;
+                    y = myPoint.get(RemoteTransforService.KEY_LAHEI).y;
+                    L.d( "tap6 sure transfor x = " + x + ",y = " + y);
+                    Utils.execCommand("input tap " + x + " " + y,true);
+                    Thread.currentThread().sleep(1000);
+                    returnMain();
+                    return;
+                }
             }
 
             if(waitForActivity(ZFB_ENTER_PERSON,TIME_WAIT)){
-                Thread.currentThread().sleep(1500);
+                Thread.currentThread().sleep(500);
                 Utils.execCommand("input keyevent 4 ",true);
                 L.d( "end");
             }else{
                 L.e( "8 not ZFB_ENTER_PERSON");
+                returnMain();
+                return;
             }
 
+        }catch (Exception e){
+            MobclickAgent.reportError(mContext, e.getStackTrace().toString());
+            L.e( "Exception description = " + e.getMessage() + ",e = " + e);
+        }
+    }
+
+    private void returnMain(){
+        L.d("returnMain()");
+        try{
+            if(waitForActivity(ZFB_TRANSFOR_SUCCES,3)){
+                Utils.execCommand("input keyevent 4 ",true);
+                Thread.currentThread().sleep(1000);
+            }
+            if(waitForActivity(ZFB_TRANSFOR,3)){
+                Utils.execCommand("input keyevent 4 ",true);
+                Thread.currentThread().sleep(1000);
+            }
+            if(waitForActivity(ZFB_FRIEND,3)){
+                Utils.execCommand("input keyevent 4 ",true);
+                Thread.currentThread().sleep(1000);
+            }
+            if(waitForActivity(ZFB_ADD_FRIEND,3)){
+                Utils.execCommand("input keyevent 4 ",true);
+                Thread.currentThread().sleep(1000);
+            }
+            if(waitForActivity(ZFB_ADD_FRIEND,3)){
+                Utils.execCommand("input keyevent 4 ",true);
+                Thread.currentThread().sleep(1000);
+            }
         }catch (Exception e){
             MobclickAgent.reportError(mContext, e.getStackTrace().toString());
             L.e( "Exception description = " + e.getMessage() + ",e = " + e);
@@ -357,7 +369,6 @@ public class TransforMeneyThread extends Thread {
     private boolean waitForActivity(String activity,int count) throws Exception{
         boolean result = false;
         while(count > 0){
-            //Utils.sleep(500);
             Thread.currentThread().sleep(500);
             if(isPause){
                 return false;
